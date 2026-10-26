@@ -17,7 +17,7 @@ read and follow only that stage's file:
 
 | Stage | File | Caller |
 | --- | --- | --- |
-| `prd` | `stages/prd.md` | Linear delegation (issue assigned to Factory) |
+| `prd` | `stages/prd.md` | Linear delegation (issue assigned to Factory), outside this repository |
 | `plan` | `stages/plan.md` | Planner automation, every 5 minutes |
 | `dev` | `stages/dev.md` | Dev automation, chained after Planner |
 | `babysit` | `stages/babysit.md` | PR Babysitter automation, every 10 minutes and after Dev |
@@ -30,7 +30,7 @@ one stage in a session.
 | Item | Value |
 | --- | --- |
 | Repository | `factory-saif/cbre-prd-to-pr-demo`, default branch `main` |
-| Local checkout | Repository root containing this skill |
+| Local checkout | Repository root containing this skill. The `prd` stage may use a read-only public clone |
 | Build and test | `mvn --batch-mode verify` (Java 21, Maven) |
 | Linear team | SE Demo, key `SED` |
 | Linear project | `CBRE Demo` |

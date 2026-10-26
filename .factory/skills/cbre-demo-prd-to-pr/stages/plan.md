@@ -7,8 +7,10 @@ stories to Dev when their dependencies are done.
 
 ### A. New PRDs
 
-1. List open `CBRE Demo` issues labeled `PRD` that have no parent issue and
-   have a comment starting with `## Structured PRD`.
+1. List open `CBRE Demo` issues that have no parent issue and have a comment
+   containing a `## Structured PRD` heading, with or without the `PRD`
+   label. Add `PRD` where it is missing: a delegated PRD session may not be
+   able to set labels.
 2. For each one, skip it if a comment starts with `## Stories`. Otherwise:
    1. Read the `## Structured PRD` comment.
    2. Read the code the PRD touches (`src/main/java/com/example/facilities/`,

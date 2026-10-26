@@ -2,7 +2,15 @@
 
 Turn one Linear issue into a structured PRD. This stage runs when a person
 assigns a `CBRE Demo` issue to Factory or mentions `@Factory` on it. It never
-touches the repository.
+changes the repository: no branches, commits, or pull requests.
+
+Delegated sessions run on a shared computer that does not have this
+repository. If the current directory is not a checkout of it, make a
+read-only clone over public HTTPS and read the skill from there:
+
+```bash
+git clone --depth 1 https://github.com/factory-saif/cbre-prd-to-pr-demo.git /tmp/cbre-prd-to-pr-demo
+```
 
 ## Steps
 
@@ -24,8 +32,14 @@ touches the repository.
    - **Non-goals**: what this change will not do.
    - **Risks and open questions**: anything the issue leaves undecided.
 6. Add the `PRD` label. Keep every existing label, including
-   `Experiment`.
-7. Move the issue to `Todo` if it is in `Backlog` or `Triage`.
+   `Experiment`. If your Linear tools cannot change labels, skip this step:
+   the Planner adds `PRD` to any issue with a `## Structured PRD` comment.
+7. Move the issue to `Todo` if it is in `Backlog` or `Triage` and your
+   tools allow it.
+
+If you have no tool that posts a Linear comment, make your final reply the
+PRD itself, starting with the line `## Structured PRD`. Linear posts the
+final reply as a comment on the issue.
 
 ## Rules
 
