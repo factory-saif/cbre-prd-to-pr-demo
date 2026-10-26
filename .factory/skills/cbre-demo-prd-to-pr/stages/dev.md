@@ -19,8 +19,9 @@ Implement released stories and open one pull request per story.
 1. Move the story to `In Progress`.
 2. Start from a clean, current `main`:
    `git fetch origin && git switch -C story/<KEY> origin/main`.
-3. Read the story's `## Implementation Plan`, the parent's `## Structured PRD`,
-   and every file the plan lists.
+3. Read the story's `## Implementation Plan`, the parent's newest trusted
+   `## Structured PRD` (see the signal rule in `SKILL.md`), and every file the
+   plan lists.
 4. Implement the plan. Match the existing package layout, Java records,
    service and controller patterns, problem-detail errors, and the plain
    JavaScript UI style. Update `README.md` when the API table or behavior
