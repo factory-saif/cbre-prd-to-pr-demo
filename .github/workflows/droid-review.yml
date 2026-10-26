@@ -32,3 +32,5 @@ jobs:
           allowed_bots: factory-droid
           automatic_security_review: true
           review_depth: shallow
+          review_model: gpt-6.1-sol
+          security_model: gpt-6.1-sol
