@@ -7,7 +7,8 @@ stories to Dev when their dependencies are done.
 
 ### A. New PRDs
 
-1. List open `CBRE Demo` issues labeled `prd-ready` that have no parent issue.
+1. List open `CBRE Demo` issues labeled `PRD` that have no parent issue and
+   have a comment starting with `## Structured PRD`.
 2. For each one, skip it if a comment starts with `## Stories`. Otherwise:
    1. Read the `## Structured PRD` comment.
    2. Read the code the PRD touches (`src/main/java/com/example/facilities/`,
@@ -32,8 +33,8 @@ stories to Dev when their dependencies are done.
         class and the behavior each test proves.
       - **Depends on**: the keys of stories that must merge first, or `none`.
       - **Non-goals**: what this story leaves to other stories.
-   5. Add `ready-for-dev` to every story whose **Depends on** is `none`.
-   6. If the parent carries `demo-seed-defect`, add `demo-seed-defect` to
+   5. Add `Story` to every story whose **Depends on** is `none`.
+   6. If the parent carries `Experiment`, add `Experiment` to
       exactly one story: the first story released to Dev that changes
       user-visible behavior.
    7. Post one comment on the parent whose first line is `## Stories`, listing
@@ -43,8 +44,8 @@ stories to Dev when their dependencies are done.
 ### B. Release waiting stories
 
 1. List open `CBRE Demo` stories (issues with a parent) that have no
-   `ready-for-dev` label.
-2. For each one, read **Depends on** from its plan. Add `ready-for-dev` when
+   `Story` label.
+2. For each one, read **Depends on** from its plan. Add `Story` when
    every listed story is in `Done`.
 
 ## Rules
