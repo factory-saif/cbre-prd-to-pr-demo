@@ -21,15 +21,17 @@ and stop. Delete `$WS` when you finish.
 
 1. Read the issue: title, description, labels, project, and every comment.
 2. Stop if the issue is not in the `CBRE Demo` project.
-3. Stop if a comment already starts with `## Structured PRD`, and reply that
-   the PRD already exists. Add `PRD` first if it is missing and your Linear
-   tools can change labels.
+3. Stop if a trusted `## Structured PRD` comment exists (see the signal rule
+   in `SKILL.md`), and reply that the PRD already exists. Add `PRD` first if
+   it is missing and your Linear tools can change labels.
 4. Read `README.md` and `docs/pipeline.md` so the PRD uses the real domain
    (work orders, priorities, response targets, status workflow, API, web UI).
-5. If a missing product decision blocks building, post one comment whose
-   first line is exactly `## PRD Questions`, list each question, and stop. Do
-   not add `PRD`. After someone answers, delegating the issue again writes the
-   PRD.
+5. If a missing product decision blocks building: when a trusted
+   `## PRD Questions` comment already exists and no one has answered it since,
+   reply that the questions are still open and stop. Otherwise post one
+   comment whose first line is exactly `## PRD Questions`, list each question,
+   and stop. Do not add `PRD`. After someone answers, delegating the issue
+   again writes the PRD.
 6. Otherwise, write the PRD as one comment whose first line is exactly
    `## Structured PRD`, with these sections:
    - **Problem**: who is affected and what is hard today.

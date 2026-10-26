@@ -7,14 +7,13 @@ stories to Dev when their dependencies are done.
 
 ### A. New PRDs
 
-1. List open `CBRE Demo` issues that have no parent issue and have a comment
-   starting with `## Structured PRD` from a trusted author: the Factory agent
-   (Linear agent user `Factory`) or the Linear user this session runs as.
-   Ignore PRD comments from anyone else, and skip issues whose latest PRD-stage
-   comment is `## PRD Questions`. Add `PRD` where it is missing, because a
-   delegated PRD session may not be able to set labels.
+1. List open `CBRE Demo` issues that have no parent issue and have a trusted
+   `## Structured PRD` comment (see the signal rule in `SKILL.md`). Skip an
+   issue when its newest trusted signal comment is `## PRD Questions`. Add
+   `PRD` where it is missing, because a delegated PRD session may not be able
+   to set labels.
 2. For each one, skip it if a comment starts with `## Stories`. Otherwise:
-   1. Read the `## Structured PRD` comment.
+   1. Read the newest trusted `## Structured PRD` comment.
    2. Read the code the PRD touches (`src/main/java/com/example/facilities/`,
       `src/main/resources/static/`, and the matching tests) so each plan names
       real files, classes, and methods.
