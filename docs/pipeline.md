@@ -26,8 +26,8 @@ flowchart TD
 
 | # | Stage | Runs as | Trigger | Reads | Writes |
 | --- | --- | --- | --- | --- | --- |
-| 1 | PRD | Linear delegation (issue assigned to Factory) | Assignment or `@Factory` mention | Issue title, description, comments | `## Structured PRD` comment and `PRD` label, or `## PRD Questions` when blocked |
-| 2 | Planner | Scheduled automation | Every 5 minutes | Issues with a `## Structured PRD` comment from Factory and no stories | Story sub-issues with `## Implementation Plan`, `Story` label |
+| 1 | PRD | Linear delegation (issue assigned to Factory) | Assignment or `@Factory` mention | Issue title, description, comments | `## Structured PRD` comment and, when its tools allow, `PRD` label; or `## PRD Questions` when blocked |
+| 2 | Planner | Scheduled automation | Every 5 minutes | Issues with a trusted `## Structured PRD` comment and no stories | Story sub-issues with `## Implementation Plan`, `Story` label, `PRD` label when missing |
 | 3 | Dev | Chained automation | After each Planner run | Stories labeled `Story` without `Implementation` | Branch `story/<KEY>`, tests, pull request, `## Pull Request` comment, `Implementation` label |
 | 4 | Code Review | GitHub Action | PR opened, reopened, and every push | Pull request diff | Inline review comments |
 | 5 | E2E QA | GitHub Action, required check | PR opened, reopened, and every push | Pull request diff, running app | One sticky QA report comment, evidence artifacts |

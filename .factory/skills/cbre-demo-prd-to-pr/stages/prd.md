@@ -11,11 +11,13 @@ repository. If the current directory is not a checkout of it, clone a
 read-only copy into a new private directory and read the skill from there:
 
 ```bash
-WS=$(mktemp -d) && git clone --depth 1 https://github.com/factory-saif/cbre-prd-to-pr-demo.git "$WS/repo"
+WS=$(mktemp -d) && echo "$WS" && git clone --depth 1 https://github.com/factory-saif/cbre-prd-to-pr-demo.git "$WS/repo"
 ```
 
-Never reuse an existing directory. If the clone fails, reply with the error
-and stop. Delete `$WS` when you finish.
+Shell variables do not carry over between commands, so note the absolute
+path the command prints and use that literal path afterwards. Never reuse an
+existing directory. Delete the directory before you stop, including when the
+clone fails or you stop early.
 
 ## Steps
 
