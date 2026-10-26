@@ -42,6 +42,13 @@ Use the Linear connector tools for Linear and the `gh` CLI for GitHub. Never
 mention `@droid` in a GitHub comment or reply: that starts the Droid Tag
 workflow.
 
+## Workspace
+
+Runs can overlap (Planner, Dev, and PR Babysitter fire on their own
+schedules). Each automation run works in a fresh clone made for that run and
+deletes it at the end. Never do git work in a checkout that another session
+might use.
+
 ## Linear signals
 
 Only these labels and comment headings move work between stages. Each stage
