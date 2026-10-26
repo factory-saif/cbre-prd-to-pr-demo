@@ -51,6 +51,7 @@ class WorkOrderApiTest {
                 .andExpect(jsonPath("$.status").value("OPEN"))
                 .andExpect(jsonPath("$.dueAt").value("2026-03-02T13:00:00Z"))
                 .andExpect(jsonPath("$.overdue").value(false))
+                .andExpect(jsonPath("$.atRisk").value(false))
                 .andExpect(jsonPath("$.nextStatuses[0]").value("ASSIGNED"));
     }
 

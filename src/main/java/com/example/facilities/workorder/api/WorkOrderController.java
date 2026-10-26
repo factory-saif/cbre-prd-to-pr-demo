@@ -36,8 +36,9 @@ public class WorkOrderController {
             @RequestParam(required = false) Priority priority,
             @RequestParam(required = false) Category category,
             @RequestParam(required = false) Boolean overdue,
+            @RequestParam(required = false) Boolean atRisk,
             @RequestParam(name = "q", required = false) String query) {
-        WorkOrderFilter filter = new WorkOrderFilter(status, priority, category, overdue, query);
+        WorkOrderFilter filter = new WorkOrderFilter(status, priority, category, overdue, atRisk, query);
         return service.list(filter).stream().map(this::toResponse).toList();
     }
 
@@ -70,6 +71,6 @@ public class WorkOrderController {
     }
 
     private WorkOrderResponse toResponse(WorkOrder order) {
-        return WorkOrderResponse.from(order, service.isOverdue(order));
+        return WorkOrderResponse.from(order, service.isOverdue(order), service.isAtRisk(order));
     }
 }

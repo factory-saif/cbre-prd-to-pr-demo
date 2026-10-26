@@ -23,10 +23,11 @@ public record WorkOrderResponse(
         Instant updatedAt,
         Instant completedAt,
         boolean overdue,
+        boolean atRisk,
         List<Status> nextStatuses,
         List<ActivityEntry> activity) {
 
-    public static WorkOrderResponse from(WorkOrder order, boolean overdue) {
+    public static WorkOrderResponse from(WorkOrder order, boolean overdue, boolean atRisk) {
         return new WorkOrderResponse(
                 order.id(),
                 order.title(),
@@ -42,6 +43,7 @@ public record WorkOrderResponse(
                 order.updatedAt(),
                 order.completedAt(),
                 overdue,
+                atRisk,
                 order.status().nextStatuses(),
                 order.activity());
     }

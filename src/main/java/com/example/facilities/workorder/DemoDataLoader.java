@@ -42,6 +42,9 @@ class DemoDataLoader implements ApplicationRunner {
         seed(now.minus(Duration.ofHours(1)), "Badge reader offline at the loading dock", null,
                 "Tower B · Dock 2", Category.SECURITY, Priority.URGENT, "Taylor Brooks");
 
+        seed(now.minus(Duration.ofHours(3).plusMinutes(15)), "Freight elevator door sticking", null,
+                "Tower B · Freight elevator", Category.GENERAL, Priority.URGENT, "Casey Nguyen");
+
         WorkOrder cleaning = seed(now.minus(Duration.ofHours(20)), "Deep clean after the town hall",
                 "Event space needs a full reset before Friday.", "Tower A · Floor 1 Event Hall",
                 Category.CLEANING, Priority.MEDIUM, "Jamie Cruz");

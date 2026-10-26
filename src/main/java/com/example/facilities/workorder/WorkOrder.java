@@ -65,6 +65,11 @@ public class WorkOrder {
         return !status.isClosed() && now.isAfter(dueAt);
     }
 
+    public boolean isAtRiskAt(Instant now) {
+        Instant atRiskFrom = createdAt.plus(priority.responseTarget().multipliedBy(3).dividedBy(4));
+        return !status.isClosed() && !now.isBefore(atRiskFrom) && !now.isAfter(dueAt);
+    }
+
     private void touch(Instant at, String message) {
         updatedAt = at;
         activity.add(new ActivityEntry(at, message));

@@ -81,6 +81,10 @@ public class WorkOrderService {
         return order.isOverdueAt(clock.instant());
     }
 
+    public boolean isAtRisk(WorkOrder order) {
+        return order.isAtRiskAt(clock.instant());
+    }
+
     public WorkOrderSummary summary() {
         Instant now = clock.instant();
         List<WorkOrder> all = repository.findAll();
@@ -91,10 +95,11 @@ public class WorkOrderService {
         all.forEach(order -> byStatus.merge(order.status(), 1L, Long::sum));
         long active = all.stream().filter(order -> !order.status().isClosed()).count();
         long overdue = all.stream().filter(order -> order.isOverdueAt(now)).count();
+        long atRisk = all.stream().filter(order -> order.isAtRiskAt(now)).count();
         long urgentActive = all.stream()
                 .filter(order -> !order.status().isClosed() && order.priority() == Priority.URGENT)
                 .count();
-        return new WorkOrderSummary(all.size(), active, overdue, urgentActive, byStatus);
+        return new WorkOrderSummary(all.size(), active, overdue, atRisk, urgentActive, byStatus);
     }
 
     private static String trimToNull(String value) {

@@ -4,10 +4,11 @@ import java.time.Instant;
 import java.util.Locale;
 import java.util.stream.Stream;
 
-public record WorkOrderFilter(Status status, Priority priority, Category category, Boolean overdue, String query) {
+public record WorkOrderFilter(Status status, Priority priority, Category category, Boolean overdue, Boolean atRisk,
+                              String query) {
 
     public static WorkOrderFilter none() {
-        return new WorkOrderFilter(null, null, null, null, null);
+        return new WorkOrderFilter(null, null, null, null, null, null);
     }
 
     boolean matches(WorkOrder order, Instant now) {
@@ -21,6 +22,9 @@ public record WorkOrderFilter(Status status, Priority priority, Category categor
             return false;
         }
         if (overdue != null && order.isOverdueAt(now) != overdue) {
+            return false;
+        }
+        if (atRisk != null && order.isAtRiskAt(now) != atRisk) {
             return false;
         }
         return matchesQuery(order);
