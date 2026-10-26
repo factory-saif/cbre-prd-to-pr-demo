@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Facilities Desk</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="logo" aria-hidden="true">FD</span>
+      <div>
+        <h1>Facilities Desk</h1>
+        <p>Work orders across every building, tracked against response targets.</p>
+      </div>
+    </div>
+    <button id="new-request-button" class="primary" type="button" data-testid="new-request-button">New request</button>
+  </header>
+
+  <main>
+    <section class="summary" aria-label="Summary" data-testid="summary">
+      <article class="card"><span class="label">Active</span><strong id="summary-active" data-testid="summary-active">–</strong></article>
+      <article class="card warn"><span class="label">Overdue</span><strong id="summary-overdue" data-testid="summary-overdue">–</strong></article>
+      <article class="card"><span class="label">Urgent active</span><strong id="summary-urgent" data-testid="summary-urgent">–</strong></article>
+      <article class="card ok"><span class="label">Completed</span><strong id="summary-completed" data-testid="summary-completed">–</strong></article>
+    </section>
+
+    <section class="filters" aria-label="Filters">
+      <input id="filter-query" type="search" placeholder="Search ID, title, location, or people" aria-label="Search" data-testid="filter-query">
+      <select id="filter-status" aria-label="Status" data-testid="filter-status"><option value="">All statuses</option></select>
+      <select id="filter-priority" aria-label="Priority" data-testid="filter-priority"><option value="">All priorities</option></select>
+      <select id="filter-category" aria-label="Category" data-testid="filter-category"><option value="">All categories</option></select>
+      <label class="checkbox"><input id="filter-overdue" type="checkbox" data-testid="filter-overdue"> Overdue only</label>
+    </section>
+
+    <section class="layout">
+      <div class="table-wrap">
+        <table data-testid="work-order-table">
+          <thead>
+            <tr><th>ID</th><th>Request</th><th>Priority</th><th>Status</th><th>Assignee</th><th>Due</th></tr>
+          </thead>
+          <tbody id="work-order-rows"></tbody>
+        </table>
+        <p id="empty-state" class="empty" hidden>No work orders match these filters.</p>
+        <p id="list-error" class="errors" role="alert" hidden></p>
+      </div>
+
+      <aside id="detail" class="detail" data-testid="work-order-detail" hidden>
+        <div class="detail-head">
+          <div>
+            <span id="detail-id" class="muted" data-testid="detail-id"></span>
+            <h2 id="detail-title"></h2>
+          </div>
+          <button id="detail-close" type="button" class="ghost" aria-label="Close details">×</button>
+        </div>
+        <p id="detail-description" class="description"></p>
+        <dl id="detail-meta" class="meta"></dl>
+
+        <form id="assign-form" class="inline-form" data-testid="assign-form">
+          <label for="assignee-input">Assignee</label>
+          <div class="row">
+            <input id="assignee-input" name="assignee" maxlength="80" placeholder="Technician name" data-testid="assignee-input">
+            <button type="submit" class="primary" data-testid="assign-button">Assign</button>
+          </div>
+        </form>
+
+        <div class="status-actions">
+          <label for="status-note">Status update</label>
+          <input id="status-note" maxlength="500" placeholder="Optional note" data-testid="status-note">
+          <div id="status-buttons" class="row wrap" data-testid="status-buttons"></div>
+        </div>
+
+        <p id="detail-error" class="errors" role="alert" data-testid="detail-error" hidden></p>
+
+        <h3>Activity</h3>
+        <ol id="detail-activity" class="activity" data-testid="detail-activity"></ol>
+      </aside>
+    </section>
+  </main>
+
+  <dialog id="new-request-dialog" data-testid="new-request-dialog">
+    <form id="new-request-form" novalidate>
+      <h2>New work order</h2>
+      <label>Title<input name="title" maxlength="120" required data-testid="new-title"></label>
+      <label>Description<textarea name="description" maxlength="2000" rows="3" data-testid="new-description"></textarea></label>
+      <label>Location<input name="location" maxlength="120" placeholder="Building · Floor" required data-testid="new-location"></label>
+      <div class="row">
+        <label>Category<select name="category" required data-testid="new-category"></select></label>
+        <label>Priority<select name="priority" required data-testid="new-priority"></select></label>
+      </div>
+      <label>Requester<input name="requester" maxlength="80" required data-testid="new-requester"></label>
+      <p id="form-errors" class="errors" role="alert" data-testid="form-errors" hidden></p>
+      <div class="row end">
+        <button type="button" id="cancel-new" class="ghost">Cancel</button>
+        <button type="submit" class="primary" data-testid="create-button">Create</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,200 @@
+package com.example.facilities.workorder;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import com.example.facilities.workorder.api.CreateWorkOrderRequest;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.List;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+
+class WorkOrderServiceTest {
+
+    private static final Instant START = Instant.parse("2026-03-02T09:00:00Z");
+
+    private MutableClock clock;
+    private WorkOrderService service;
+
+    @BeforeEach
+    void setUp() {
+        clock = new MutableClock(START);
+        service = new WorkOrderService(new WorkOrderRepository(), clock);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"URGENT, 4", "HIGH, 24", "MEDIUM, 72", "LOW, 168"})
+    void newWorkOrderIsOpenAndDueWithinItsPriorityResponseTarget(Priority priority, long hours) {
+        WorkOrder order = service.create(request("Broken door closer", priority, Category.GENERAL));
+
+        assertThat(order.id()).isEqualTo("WO-1001");
+        assertThat(order.status()).isEqualTo(Status.OPEN);
+        assertThat(order.dueAt()).isEqualTo(START.plus(Duration.ofHours(hours)));
+        assertThat(order.activity()).extracting(ActivityEntry::message)
+                .containsExactly("Request created by Morgan Ellis");
+    }
+
+    @Test
+    void createTrimsTextAndDropsBlankDescription() {
+        WorkOrder order = service.create(new CreateWorkOrderRequest(
+                "  Leaking pipe  ", "   ", " Tower B · Floor 2 ", Category.PLUMBING, Priority.HIGH, " Riley Patel "));
+
+        assertThat(order.title()).isEqualTo("Leaking pipe");
+        assertThat(order.description()).isNull();
+        assertThat(order.location()).isEqualTo("Tower B · Floor 2");
+        assertThat(order.requester()).isEqualTo("Riley Patel");
+    }
+
+    @Test
+    void assigningAnOpenWorkOrderMovesItToAssigned() {
+        WorkOrder order = service.create(request("No hot water", Priority.HIGH, Category.PLUMBING));
+
+        service.assign(order.id(), "Priya Shah");
+
+        assertThat(order.status()).isEqualTo(Status.ASSIGNED);
+        assertThat(order.assignee()).isEqualTo("Priya Shah");
+        assertThat(order.activity()).last().extracting(ActivityEntry::message).isEqualTo("Assigned to Priya Shah");
+    }
+
+    @Test
+    void reassigningAnInProgressWorkOrderKeepsItsStatus() {
+        WorkOrder order = service.create(request("No hot water", Priority.HIGH, Category.PLUMBING));
+        service.assign(order.id(), "Priya Shah");
+        service.changeStatus(order.id(), Status.IN_PROGRESS, null);
+
+        service.assign(order.id(), "Jordan Lee");
+
+        assertThat(order.status()).isEqualTo(Status.IN_PROGRESS);
+        assertThat(order.activity()).last().extracting(ActivityEntry::message)
+                .isEqualTo("Reassigned from Priya Shah to Jordan Lee");
+    }
+
+    @Test
+    void closedWorkOrdersCannotBeReassigned() {
+        WorkOrder order = service.create(request("Duplicate request", Priority.LOW, Category.GENERAL));
+        service.changeStatus(order.id(), Status.CANCELLED, "Duplicate of WO-1000");
+
+        assertThatThrownBy(() -> service.assign(order.id(), "Alex Kim"))
+                .isInstanceOf(InvalidTransitionException.class)
+                .hasMessageContaining("cannot be reassigned");
+    }
+
+    @Test
+    void completingAWorkOrderRecordsCompletionTimeAndNote() {
+        WorkOrder order = service.create(request("Replace filter", Priority.MEDIUM, Category.HVAC));
+        service.assign(order.id(), "Jordan Lee");
+        service.changeStatus(order.id(), Status.IN_PROGRESS, null);
+        clock.advance(Duration.ofHours(2));
+
+        service.changeStatus(order.id(), Status.COMPLETED, "  Filter replaced  ");
+
+        assertThat(order.status()).isEqualTo(Status.COMPLETED);
+        assertThat(order.completedAt()).isEqualTo(START.plus(Duration.ofHours(2)));
+        assertThat(order.activity()).last().extracting(ActivityEntry::message)
+                .isEqualTo("Status changed from In progress to Completed: Filter replaced");
+    }
+
+    @Test
+    void statusChangesMustFollowTheWorkflow() {
+        WorkOrder order = service.create(request("Replace filter", Priority.MEDIUM, Category.HVAC));
+
+        assertThatThrownBy(() -> service.changeStatus(order.id(), Status.COMPLETED, null))
+                .isInstanceOf(InvalidTransitionException.class)
+                .hasMessage("Cannot move WO-1001 from Open to Completed");
+        assertThat(order.status()).isEqualTo(Status.OPEN);
+    }
+
+    @Test
+    void assigningRequiresTheAssignAction() {
+        WorkOrder order = service.create(request("Replace filter", Priority.MEDIUM, Category.HVAC));
+
+        assertThatThrownBy(() -> service.changeStatus(order.id(), Status.ASSIGNED, null))
+                .isInstanceOf(InvalidTransitionException.class)
+                .hasMessageContaining("assign action");
+    }
+
+    @Test
+    void workOrderBecomesOverdueOnlyAfterItsResponseTarget() {
+        WorkOrder order = service.create(request("Badge reader offline", Priority.URGENT, Category.SECURITY));
+
+        clock.advance(Duration.ofHours(4));
+        assertThat(service.isOverdue(order)).isFalse();
+
+        clock.advance(Duration.ofMinutes(1));
+        assertThat(service.isOverdue(order)).isTrue();
+    }
+
+    @Test
+    void closedWorkOrdersAreNeverOverdue() {
+        WorkOrder order = service.create(request("Badge reader offline", Priority.URGENT, Category.SECURITY));
+        service.changeStatus(order.id(), Status.CANCELLED, null);
+
+        clock.advance(Duration.ofDays(2));
+
+        assertThat(service.isOverdue(order)).isFalse();
+    }
+
+    @Test
+    void filtersCombineStatusPriorityCategoryOverdueAndSearch() {
+        WorkOrder hvac = service.create(request("HVAC not cooling", Priority.URGENT, Category.HVAC));
+        service.create(request("Lights flickering", Priority.HIGH, Category.ELECTRICAL));
+        WorkOrder leak = service.create(request("Sink leaking", Priority.URGENT, Category.PLUMBING));
+        service.assign(leak.id(), "Priya Shah");
+        clock.advance(Duration.ofHours(5));
+
+        assertThat(ids(new WorkOrderFilter(null, Priority.URGENT, null, null, null)))
+                .containsExactly(hvac.id(), leak.id());
+        assertThat(ids(new WorkOrderFilter(Status.ASSIGNED, null, null, null, null))).containsExactly(leak.id());
+        assertThat(ids(new WorkOrderFilter(null, null, Category.HVAC, true, null))).containsExactly(hvac.id());
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, "priya"))).containsExactly(leak.id());
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, "wo-1002"))).hasSize(1);
+    }
+
+    @Test
+    void listShowsActiveWorkOrdersFirstByDueDate() {
+        WorkOrder low = service.create(request("Paint touch-up", Priority.LOW, Category.GENERAL));
+        WorkOrder urgent = service.create(request("Power outage", Priority.URGENT, Category.ELECTRICAL));
+        WorkOrder done = service.create(request("Swap light bulb", Priority.URGENT, Category.ELECTRICAL));
+        service.assign(done.id(), "Alex Kim");
+        service.changeStatus(done.id(), Status.IN_PROGRESS, null);
+        service.changeStatus(done.id(), Status.COMPLETED, null);
+
+        assertThat(ids(WorkOrderFilter.none())).containsExactly(urgent.id(), low.id(), done.id());
+    }
+
+    @Test
+    void summaryCountsActiveOverdueAndUrgentWork() {
+        service.create(request("Power outage", Priority.URGENT, Category.ELECTRICAL));
+        service.create(request("Paint touch-up", Priority.LOW, Category.GENERAL));
+        WorkOrder cancelled = service.create(request("Duplicate", Priority.URGENT, Category.GENERAL));
+        service.changeStatus(cancelled.id(), Status.CANCELLED, null);
+        clock.advance(Duration.ofHours(5));
+
+        WorkOrderSummary summary = service.summary();
+
+        assertThat(summary.total()).isEqualTo(3);
+        assertThat(summary.active()).isEqualTo(2);
+        assertThat(summary.overdue()).isEqualTo(1);
+        assertThat(summary.urgentActive()).isEqualTo(1);
+        assertThat(summary.byStatus()).containsEntry(Status.OPEN, 2L).containsEntry(Status.CANCELLED, 1L)
+                .containsEntry(Status.COMPLETED, 0L);
+    }
+
+    @Test
+    void unknownWorkOrderIsNotFound() {
+        assertThatThrownBy(() -> service.get("WO-9999"))
+                .isInstanceOf(WorkOrderNotFoundException.class)
+                .hasMessage("No work order exists with ID WO-9999");
+    }
+
+    private List<String> ids(WorkOrderFilter filter) {
+        return service.list(filter).stream().map(WorkOrder::id).toList();
+    }
+
+    private static CreateWorkOrderRequest request(String title, Priority priority, Category category) {
+        return new CreateWorkOrderRequest(title, "Details", "Tower A · Floor 2", category, priority, "Morgan Ellis");
+    }
+}

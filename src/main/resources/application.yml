@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: facilities-desk
+
+server:
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+facilities:
+  # Loads six sample work orders on startup so the UI is never empty.
+  demo-data: true

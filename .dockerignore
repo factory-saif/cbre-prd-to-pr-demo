@@ -1,0 +1,8 @@
+target/
+.git/
+.github/
+.factory/
+docs/
+*.md
+.idea/
+.vscode/
