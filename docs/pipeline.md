@@ -84,6 +84,9 @@ section. The stage logic lives in this repository, versioned with the code.
 | Code Review workflow (`install-code-review`) | Done |
 | E2E QA workflow and skills (`install-qa`) | Done |
 | Build, unit test, and container workflow (`ci.yml`) | Done |
-| `cbre-demo-prd-to-pr` skill | Planned |
-| Linear project, labels, delegation | Planned |
-| Planner, Dev, and PR Babysitter automations | Planned |
+| `cbre-demo-prd-to-pr` skill | Done |
+| Linear project `CBRE Demo` and sample issue | Done |
+| Linear labels in team `SED` | Pending: needs a Linear admin |
+| Linear delegation to Factory | Pending: verify in Factory Linear settings |
+| Planner, Dev, and PR Babysitter automations | Done, on `saif-poc-sandbox` |
+| Repository secrets `FACTORY_API_KEY`, `QA_EVIDENCE_TOKEN` | Pending: repository owner |
