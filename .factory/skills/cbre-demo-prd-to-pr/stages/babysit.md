@@ -14,8 +14,8 @@ The checks on each pull request are:
 ## 1. Close out merged work
 
 For each pull request with head `story/*` merged since the story was last
-updated: move the Linear story to `Done` and remove `fixing` and
-`ready-to-merge`. If every story under the parent is `Done`, move the parent to
+updated: move the Linear story to `Done` and remove `bug` and
+`Release`. If every story under the parent is `Done`, move the parent to
 `Done`.
 
 ## 2. Inspect each open story pull request
@@ -47,24 +47,24 @@ Apply the first rule that matches:
 
 | # | State | Action |
 | --- | --- | --- |
-| 0 | The story carries `needs-human` | Skip: a human owns it now |
+| 0 | The story carries `route:human` | Skip: a human owns it now |
 | 1 | The latest `## Fix Loop #<n>` says `In progress` and is less than 30 minutes old | Skip: another run is fixing it |
 | 2 | Any check is pending or queued, or the head commit is less than 2 minutes old | Skip until the next run |
-| 3 | Any check failed or any open thread exists, and 3 Fix Loops already finished | Add `needs-human`, remove `fixing`, comment the remaining problems on the story once, stop |
+| 3 | Any check failed or any open thread exists, and 3 Fix Loops already finished | Add `route:human`, remove `bug`, comment the remaining problems on the story once, stop |
 | 4 | Any check failed or any open thread exists | Fix, see section 4 |
 | 5 | All checks passed, no open threads, QA report shows no FAIL or BLOCKED | Mark ready, see section 5 |
 
 A cancelled QA run caused by a newer push counts as pending. A check that
 failed for infrastructure reasons (runner error, missing secret) is not a
-code problem: comment the error on the story, add `needs-human`, and do not
+code problem: comment the error on the story, add `route:human`, and do not
 change code.
 
 ## 4. Fix
 
 1. Set `n` to the number of existing `## Fix Loop #` comments plus one. Post a
    story comment that starts with `## Fix Loop #<n>` and the line
-   `Status: In progress (started <ISO-8601 time>)`. Add `fixing` to the story
-   and remove `ready-to-merge` if present.
+   `Status: In progress (started <ISO-8601 time>)`. Add `bug` to the story
+   and remove `Release` if present.
 2. Check out the branch:
    `git fetch origin && git switch -C story/<KEY> origin/story/<KEY>`.
 3. Read the story's `## Implementation Plan` and the problems found:
@@ -87,7 +87,7 @@ change code.
    Reply with `gh api repos/factory-saif/cbre-prd-to-pr-demo/pulls/<number>/comments/<comment-databaseId>/replies -f body='...'`.
 9. Update the `## Fix Loop #<n>` comment: replace the status line with
    `Status: Pushed <short SHA>`, then list each problem, its source (CI, QA,
-   or review thread link), and the fix. Keep `fixing`; the next run checks the
+   or review thread link), and the fix. Keep `bug`; the next run checks the
    new commit.
 
 Pushing reruns Code Review, QA, and CI on the new commit, so the next run sees
@@ -95,7 +95,7 @@ fresh results.
 
 ## 5. Mark ready
 
-1. Remove `fixing` and add `ready-to-merge` on the story, if not already set.
+1. Remove `bug` and add `Release` on the story, if not already set.
 2. Move the story to `In Review`.
 3. Comment on the story once per head commit, first line
    `## Ready to Merge`: the PR URL, the head SHA, check results, the QA report

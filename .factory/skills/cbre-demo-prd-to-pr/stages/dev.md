@@ -4,9 +4,9 @@ Implement released stories and open one pull request per story.
 
 ## Select work
 
-1. List open `CBRE Demo` issues labeled `ready-for-dev` without `pr-open`,
+1. List open `CBRE Demo` issues labeled `Story` without `Implementation`,
    oldest first. Take at most two per run.
-2. For each story, skip it when any of these is true, and add `pr-open` if a
+2. For each story, skip it when any of these is true, and add `Implementation` if a
    pull request already exists:
    - A comment starts with `## Pull Request`.
    - `gh pr list --repo factory-saif/cbre-prd-to-pr-demo --head story/<KEY> --state all`
@@ -29,7 +29,7 @@ Implement released stories and open one pull request per story.
 6. Run `mvn --batch-mode verify` until it passes. Fix code, not tests. If it
    cannot pass after three attempts, comment the failing output on the story,
    push nothing, and stop on this story.
-7. If the story carries `demo-seed-defect`, follow "Seeded defect" below.
+7. If the story carries `Experiment`, follow "Seeded defect" below.
 8. Commit with the message `<KEY>: <story title>` and push
    `story/<KEY>` to `origin`.
 9. Open a pull request against `main`:
@@ -39,11 +39,11 @@ Implement released stories and open one pull request per story.
      defect in the pull request, the commits, or the code.
 10. Comment on the story with first line `## Pull Request`, then the PR URL,
     branch, and a short summary.
-11. Add `pr-open` to the story. Keep `ready-for-dev`.
+11. Add `Implementation` to the story. Keep `Story`.
 
 ## Seeded defect (demo only)
 
-Only when the story itself carries `demo-seed-defect`, and only on the first
+Only when the story itself carries `Experiment`, and only on the first
 pull request for that story:
 
 1. After `mvn --batch-mode verify` passes on the correct implementation,

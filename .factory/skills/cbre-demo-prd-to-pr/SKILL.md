@@ -54,24 +54,29 @@ might use.
 Only these labels and comment headings move work between stages. Each stage
 checks them before acting, so a rerun never repeats work.
 
-| Signal | Kind | Written by | Read by |
-| --- | --- | --- | --- |
-| `## Structured PRD` | Comment on the parent issue | prd | plan |
-| `prd-ready` | Label on the parent issue | prd | plan |
-| `## Stories` | Comment on the parent issue | plan | plan (idempotency) |
-| `## Implementation Plan` | First heading of each story description | plan | dev, babysit |
-| `ready-for-dev` | Label on a story | plan | dev |
-| `## Pull Request` | Comment on a story | dev | dev (idempotency), babysit |
-| `pr-open` | Label on a story | dev | dev (idempotency) |
-| `## Seeded Defect` | Comment on a story | dev (demo only) | presenter |
-| `## Fix Loop #<n>` | Comment on a story | babysit | babysit (attempt count, lock) |
-| `fixing` | Label on a story | babysit | babysit |
-| `ready-to-merge` | Label on a story | babysit | human |
-| `needs-human` | Label on a story | babysit | human |
-| `demo-seed-defect` | Label on a parent issue or story | presenter | plan, dev |
+| Signal | Kind | Meaning in this pipeline | Written by | Read by |
+| --- | --- | --- | --- | --- |
+| `## Structured PRD` | Comment on the parent issue | PRD posted | prd | plan |
+| `PRD` | Label on the parent issue | PRD posted, ready to plan | prd | plan |
+| `## Stories` | Comment on the parent issue | Stories created | plan | plan (idempotency) |
+| `## Implementation Plan` | First heading of each story description | The story's plan | plan | dev, babysit |
+| `Story` | Label on a story | Released to Dev (ready for dev) | plan | dev |
+| `## Pull Request` | Comment on a story | PR opened | dev | dev (idempotency), babysit |
+| `Implementation` | Label on a story | PR open | dev | dev (idempotency) |
+| `## Seeded Defect` | Comment on a story | Record of the demo defect | dev (demo only) | presenter |
+| `## Fix Loop #<n>` | Comment on a story | One fix attempt | babysit | babysit (attempt count, lock) |
+| `bug` | Label on a story | Fix in progress | babysit | babysit |
+| `Release` | Label on a story | Ready to merge: checks green, no open threads | babysit | human |
+| `route:human` | Label on a story | Needs a human: automatic fixing stopped | babysit | human |
+| `Experiment` | Label on a parent issue or story | Demo opt-in: seed one defect | presenter | plan, dev |
 
-If a label is missing from the SED team, stop and report it. Do not create
-labels and do not substitute other labels.
+These labels already exist and are shared with other work in the workspace,
+so their names do not describe their meaning here. Use only the meaning in
+this table, and only on issues in the `CBRE Demo` project: always filter by
+that project when you list issues by label. Look labels up by exact name; they
+are workspace labels except `bug` and `route:human`, which belong to team
+`SED`. If one cannot be found, stop and report it. Do not create labels and
+do not substitute other labels.
 
 ## Guardrails for every stage
 
