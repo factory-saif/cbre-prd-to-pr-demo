@@ -7,7 +7,7 @@ steps until the final merge.
 ```mermaid
 flowchart TD
     H[Human creates Linear issue<br/>and assigns it to Factory] --> P1
-    P1["1 · PRD<br/>Linear delegation"] -->|label PRD| P2
+    P1["1 · PRD<br/>Linear delegation"] -->|"Structured PRD comment"| P2
     P2["2 · Planner<br/>scheduled, every 5 min"] -->|stories labeled Story| P3
     P3["3 · Dev<br/>chained after Planner"] -->|PR on story/KEY| GH
     subgraph GH [GitHub, on every PR open and push]
@@ -27,7 +27,7 @@ flowchart TD
 | # | Stage | Runs as | Trigger | Reads | Writes |
 | --- | --- | --- | --- | --- | --- |
 | 1 | PRD | Linear delegation (issue assigned to Factory) | Assignment or `@Factory` mention | Issue title, description, comments | `## Structured PRD` comment, `PRD` label |
-| 2 | Planner | Scheduled automation | Every 5 minutes | Issues labeled `PRD` without stories | Story sub-issues with `## Implementation Plan`, `Story` label |
+| 2 | Planner | Scheduled automation | Every 5 minutes | Issues with a `## Structured PRD` comment from Factory and no stories | Story sub-issues with `## Implementation Plan`, `Story` label |
 | 3 | Dev | Chained automation | After each Planner run | Stories labeled `Story` without `Implementation` | Branch `story/<KEY>`, tests, pull request, `## Pull Request` comment, `Implementation` label |
 | 4 | Code Review | GitHub Action | PR opened, reopened, and every push | Pull request diff | Inline review comments |
 | 5 | E2E QA | GitHub Action, required check | PR opened, reopened, and every push | Pull request diff, running app | One sticky QA report comment, evidence artifacts |
@@ -62,7 +62,7 @@ has the meaning below only on issues in the `CBRE Demo` project.
 
 | Label | Set by | Meaning |
 | --- | --- | --- |
-| `PRD` | PRD | Structured PRD posted |
+| `PRD` | PRD, or Planner when PRD cannot set labels | Structured PRD posted |
 | `Story` | Planner | Story has an implementation plan |
 | `Implementation` | Dev | Pull request exists for the story |
 | `bug` | PR Babysitter | A fix is in progress |

@@ -56,8 +56,9 @@ checks them before acting, so a rerun never repeats work.
 
 | Signal | Kind | Meaning in this pipeline | Written by | Read by |
 | --- | --- | --- | --- | --- |
-| `## Structured PRD` | Comment on the parent issue | PRD posted | prd | plan |
-| `PRD` | Label on the parent issue | PRD posted, ready to plan | prd | plan |
+| `## Structured PRD` | Comment on the parent issue, from a trusted author | PRD posted: the gate for planning | prd | plan |
+| `## PRD Questions` | Comment on the parent issue | PRD blocked on a product decision | prd | human |
+| `PRD` | Label on the parent issue | Visible marker that the PRD is posted | prd, or plan when prd cannot set labels | presenter |
 | `## Stories` | Comment on the parent issue | Stories created | plan | plan (idempotency) |
 | `## Implementation Plan` | First heading of each story description | The story's plan | plan | dev, babysit |
 | `Story` | Label on a story | Released to Dev (ready for dev) | plan | dev |
