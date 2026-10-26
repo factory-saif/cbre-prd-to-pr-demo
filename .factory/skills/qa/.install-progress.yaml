@@ -1,0 +1,35 @@
+# Answers from /install-qa. Rerunning the installer offers these as defaults.
+completed_categories:
+  - default_target
+  - personas
+  - critical_flows
+  - external_services
+  - cleanup
+  - imagemagick
+  - ci_integration
+  - failure_learning
+answers:
+  default_target: local
+  environment_restrictions:
+    - Branch code on localhost only; never a remote deployment.
+  personas:
+    - facilities_coordinator (no login, full access, workflow rules are the negative tests)
+  critical_flows:
+    - create work order with validation
+    - search and filters
+    - assign technician
+    - status lifecycle
+    - response target and overdue display
+    - summary counts
+    - closed work orders locked
+  external_services: none
+  cleanup: none (in-memory data)
+  imagemagick: true
+  ci:
+    platform: github
+    generate_workflow: true
+    required_check: true
+    preview_deployments: false
+    video_evidence: true
+    compose: true
+  failure_learning: suggest_in_report

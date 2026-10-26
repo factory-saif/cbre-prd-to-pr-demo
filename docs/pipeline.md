@@ -84,8 +84,12 @@ has the meaning below only on issues in the `CBRE Demo` project.
 | Component | Status |
 | --- | --- |
 | Demo application and tests | Done |
-| Code Review workflow (`install-code-review`) | Planned |
-| E2E QA workflow and skills (`install-qa`) | Planned |
-| `cbre-demo-prd-to-pr` skill | Planned |
-| Linear project, labels, delegation | Planned |
-| Planner, Dev, and PR Babysitter automations | Planned |
+| Code Review workflow (`install-code-review`) | Done |
+| E2E QA workflow and skills (`install-qa`) | Done |
+| Build, unit test, and container workflow (`ci.yml`) | Done |
+| `cbre-demo-prd-to-pr` skill | Done |
+| Linear project `CBRE Demo` and sample issue | Done |
+| Linear labels (existing labels, mapped above) | Done |
+| Linear delegation to Factory | Pending: verify in Factory Linear settings |
+| Planner, Dev, and PR Babysitter automations | Done, on `saif-poc-sandbox` |
+| Repository secrets `FACTORY_API_KEY`, `QA_EVIDENCE_TOKEN` | Done |

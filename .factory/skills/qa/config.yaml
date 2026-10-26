@@ -1,0 +1,73 @@
+project: Facilities Desk
+platform: github
+imagemagick: true
+video_evidence: true # record interactive flows through droid-control
+droid_control:
+  plugin: droid-control@factory-plugins
+  compose: true # single runtime toggle for optional edited MP4 output
+
+environments:
+  local:
+    url: http://127.0.0.1:8080
+    restrictions:
+      - Pull-request QA always tests the checked-out branch on localhost, never a remote deployment.
+      - Use fictional names and locations only.
+
+default_target: local
+
+auth:
+  method: none
+  provider: none
+
+personas:
+  - name: facilities_coordinator
+    description: 'Logs, triages, assigns, and closes facilities work orders. The app has no login.'
+    email: null
+    credentials_source: none
+    test_focus:
+      - creating work orders
+      - search and filters
+      - assigning technicians
+      - status lifecycle
+      - response targets and overdue work
+      - summary counts
+    cannot_do:
+      - create a work order without a title, location, or requester
+      - complete a work order that was never started
+      - move a work order to Assigned without the assign action
+      - reassign or change the status of a completed or cancelled work order
+      - use a priority, category, or status that does not exist
+
+apps:
+  web:
+    path_patterns:
+      - src/main/resources/static/**
+      - src/main/java/com/example/facilities/**
+      - src/main/resources/application.yml
+    skill: qa-web
+    test_tool: agent-browser
+    build_command: 'mvn --batch-mode -q package -DskipTests'
+    start_command: 'java -jar target/facilities-desk.jar --server.port=8080'
+  api:
+    path_patterns:
+      - src/main/java/com/example/facilities/**
+      - src/main/resources/application.yml
+      - pom.xml
+    skill: qa-api
+    test_tool: curl
+    build_command: 'mvn --batch-mode -q package -DskipTests'
+    start_command: 'java -jar target/facilities-desk.jar --server.port=8080'
+
+feature_flags:
+  provider: none
+  dashboard_url: null
+  how_to_override: 'Not applicable. Start with --facilities.demo-data=false for an empty list.'
+
+integrations: {}
+
+cleanup:
+  auto_cleanup: true
+  strategy: none
+  instructions: 'All data is in memory and resets when the local app stops. Stop the app at the end of the run.'
+
+failure_learning: suggest_in_report
