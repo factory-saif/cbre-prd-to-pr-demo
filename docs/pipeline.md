@@ -89,7 +89,7 @@ has the meaning below only on issues in the `CBRE Demo` project.
 | Build, unit test, and container workflow (`ci.yml`) | Done |
 | `cbre-demo-prd-to-pr` skill | Done |
 | Linear project `CBRE Demo` and sample issue | Done |
-| Linear labels in team `SED` | Pending: needs a Linear admin |
+| Linear labels (existing labels, mapped above) | Done |
 | Linear delegation to Factory | Pending: verify in Factory Linear settings |
 | Planner, Dev, and PR Babysitter automations | Done, on `saif-poc-sandbox` |
-| Repository secrets `FACTORY_API_KEY`, `QA_EVIDENCE_TOKEN` | Pending: repository owner |
+| Repository secrets `FACTORY_API_KEY`, `QA_EVIDENCE_TOKEN` | Done |
