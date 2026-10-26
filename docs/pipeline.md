@@ -81,8 +81,9 @@ section. The stage logic lives in this repository, versioned with the code.
 | Component | Status |
 | --- | --- |
 | Demo application and tests | Done |
-| Code Review workflow (`install-code-review`) | Planned |
-| E2E QA workflow and skills (`install-qa`) | Planned |
+| Code Review workflow (`install-code-review`) | Done |
+| E2E QA workflow and skills (`install-qa`) | Done |
+| Build, unit test, and container workflow (`ci.yml`) | Done |
 | `cbre-demo-prd-to-pr` skill | Planned |
 | Linear project, labels, delegation | Planned |
 | Planner, Dev, and PR Babysitter automations | Planned |
