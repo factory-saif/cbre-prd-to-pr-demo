@@ -79,6 +79,18 @@ class WorkOrderAtRiskApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].id").value("WO-1003"));
+
+        mvc.perform(get("/api/work-orders").param("atRisk", "true").param("q", "elevator"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].id", containsInAnyOrder("WO-1001", "WO-1003")));
+
+        mvc.perform(get("/api/work-orders").param("atRisk", "true").param("q", "WO-1002"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+
+        mvc.perform(get("/api/work-orders").param("atRisk", "false").param("q", "WO-1003"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
     }
 
     @Test

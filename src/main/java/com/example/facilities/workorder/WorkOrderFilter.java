@@ -24,10 +24,10 @@ public record WorkOrderFilter(Status status, Priority priority, Category categor
         if (overdue != null && order.isOverdueAt(now) != overdue) {
             return false;
         }
-        if (query != null && !query.isBlank()) {
-            return matchesQuery(order);
+        if (atRisk != null && order.isAtRiskAt(now) != atRisk) {
+            return false;
         }
-        return atRisk == null || order.isAtRiskAt(now) == atRisk;
+        return matchesQuery(order);
     }
 
     private boolean matchesQuery(WorkOrder order) {

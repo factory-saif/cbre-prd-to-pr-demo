@@ -214,6 +214,12 @@ class WorkOrderServiceTest {
                 .containsExactlyInAnyOrder(mix.urgentFresh().id(), mix.urgentOverdue().id(), mix.completed().id());
         assertThat(ids(new WorkOrderFilter(null, Priority.URGENT, null, null, true, null)))
                 .containsExactly(mix.urgentAtRisk().id());
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, true, "tower")))
+                .containsExactlyInAnyOrder(mix.urgentAtRisk().id(), mix.highAtRisk().id());
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, true, "hvac"))).isEmpty();
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, false, "sink"))).isEmpty();
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, false, "hvac")))
+                .containsExactly(mix.urgentOverdue().id());
     }
 
     @Test
