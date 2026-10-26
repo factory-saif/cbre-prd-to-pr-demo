@@ -138,6 +138,96 @@ class WorkOrderServiceTest {
     }
 
     @Test
+    void urgentWorkOrderIsAtRiskFromThreeQuartersOfItsWindowUntilDue() {
+        WorkOrder order = service.create(request("Badge reader offline", Priority.URGENT, Category.SECURITY));
+
+        clock.advance(Duration.ofHours(2).plusMinutes(59));
+        assertThat(service.isAtRisk(order)).isFalse();
+        assertThat(service.isOverdue(order)).isFalse();
+
+        clock.advance(Duration.ofMinutes(1));
+        assertThat(service.isAtRisk(order)).isTrue();
+        assertThat(service.isOverdue(order)).isFalse();
+
+        clock.advance(Duration.ofHours(1));
+        assertThat(service.isAtRisk(order)).isTrue();
+        assertThat(service.isOverdue(order)).isFalse();
+
+        clock.advance(Duration.ofMinutes(1));
+        assertThat(service.isAtRisk(order)).isFalse();
+        assertThat(service.isOverdue(order)).isTrue();
+    }
+
+    @ParameterizedTest
+    @CsvSource({"URGENT, 180", "HIGH, 1080", "MEDIUM, 3240", "LOW, 7560"})
+    void atRiskThresholdIsThreeQuartersOfEveryPriorityWindow(Priority priority, long thresholdMinutes) {
+        WorkOrder order = service.create(request("Broken door closer", priority, Category.GENERAL));
+
+        clock.advance(Duration.ofMinutes(thresholdMinutes - 1));
+        assertThat(service.isAtRisk(order)).isFalse();
+
+        clock.advance(Duration.ofMinutes(1));
+        assertThat(service.isAtRisk(order)).isTrue();
+    }
+
+    @Test
+    void closedWorkOrdersAreNeverAtRisk() {
+        WorkOrder completed = service.create(request("Replace filter", Priority.URGENT, Category.HVAC));
+        service.assign(completed.id(), "Jordan Lee");
+        service.changeStatus(completed.id(), Status.IN_PROGRESS, null);
+        service.changeStatus(completed.id(), Status.COMPLETED, null);
+        WorkOrder cancelled = service.create(request("Duplicate request", Priority.URGENT, Category.GENERAL));
+        service.changeStatus(cancelled.id(), Status.CANCELLED, null);
+
+        clock.advance(Duration.ofHours(3).plusMinutes(30));
+
+        assertThat(service.isAtRisk(completed)).isFalse();
+        assertThat(service.isAtRisk(cancelled)).isFalse();
+    }
+
+    @Test
+    void assignedInProgressAndOnHoldOrdersCanBeAtRisk() {
+        WorkOrder assigned = service.create(request("No hot water", Priority.URGENT, Category.PLUMBING));
+        service.assign(assigned.id(), "Priya Shah");
+        WorkOrder inProgress = service.create(request("Power outage", Priority.URGENT, Category.ELECTRICAL));
+        service.assign(inProgress.id(), "Alex Kim");
+        service.changeStatus(inProgress.id(), Status.IN_PROGRESS, null);
+        WorkOrder onHold = service.create(request("HVAC not cooling", Priority.URGENT, Category.HVAC));
+        service.assign(onHold.id(), "Jordan Lee");
+        service.changeStatus(onHold.id(), Status.IN_PROGRESS, null);
+        service.changeStatus(onHold.id(), Status.ON_HOLD, "Waiting for parts");
+
+        clock.advance(Duration.ofHours(3));
+
+        assertThat(List.of(assigned, inProgress, onHold)).extracting(WorkOrder::status)
+                .containsExactly(Status.ASSIGNED, Status.IN_PROGRESS, Status.ON_HOLD);
+        assertThat(List.of(assigned, inProgress, onHold)).allMatch(service::isAtRisk);
+    }
+
+    @Test
+    void atRiskFilterCombinesWithOtherFilters() {
+        AtRiskMix mix = seedAtRiskMix();
+
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, true, null)))
+                .containsExactlyInAnyOrder(mix.urgentAtRisk().id(), mix.highAtRisk().id());
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, false, null)))
+                .containsExactlyInAnyOrder(mix.urgentFresh().id(), mix.urgentOverdue().id(), mix.completed().id());
+        assertThat(ids(new WorkOrderFilter(null, Priority.URGENT, null, null, true, null)))
+                .containsExactly(mix.urgentAtRisk().id());
+    }
+
+    @Test
+    void summaryCountsAtRiskWork() {
+        seedAtRiskMix();
+
+        WorkOrderSummary summary = service.summary();
+
+        assertThat(summary.atRisk())
+                .isEqualTo(ids(new WorkOrderFilter(null, null, null, null, true, null)).size())
+                .isEqualTo(2);
+        assertThat(summary.overdue()).isEqualTo(1);
+    }
+    @Test
     void filtersCombineStatusPriorityCategoryOverdueAndSearch() {
         WorkOrder hvac = service.create(request("HVAC not cooling", Priority.URGENT, Category.HVAC));
         service.create(request("Lights flickering", Priority.HIGH, Category.ELECTRICAL));
@@ -145,12 +235,12 @@ class WorkOrderServiceTest {
         service.assign(leak.id(), "Priya Shah");
         clock.advance(Duration.ofHours(5));
 
-        assertThat(ids(new WorkOrderFilter(null, Priority.URGENT, null, null, null)))
+        assertThat(ids(new WorkOrderFilter(null, Priority.URGENT, null, null, null, null)))
                 .containsExactly(hvac.id(), leak.id());
-        assertThat(ids(new WorkOrderFilter(Status.ASSIGNED, null, null, null, null))).containsExactly(leak.id());
-        assertThat(ids(new WorkOrderFilter(null, null, Category.HVAC, true, null))).containsExactly(hvac.id());
-        assertThat(ids(new WorkOrderFilter(null, null, null, null, "priya"))).containsExactly(leak.id());
-        assertThat(ids(new WorkOrderFilter(null, null, null, null, "wo-1002"))).hasSize(1);
+        assertThat(ids(new WorkOrderFilter(Status.ASSIGNED, null, null, null, null, null))).containsExactly(leak.id());
+        assertThat(ids(new WorkOrderFilter(null, null, Category.HVAC, true, null, null))).containsExactly(hvac.id());
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, null, "priya"))).containsExactly(leak.id());
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, null, "wo-1002"))).hasSize(1);
     }
 
     @Test
@@ -190,8 +280,27 @@ class WorkOrderServiceTest {
                 .hasMessage("No work order exists with ID WO-9999");
     }
 
-    private List<String> ids(WorkOrderFilter filter) {
-        return service.list(filter).stream().map(WorkOrder::id).toList();
+    private AtRiskMix seedAtRiskMix() {
+        WorkOrder urgentAtRisk = service.createAt(
+                request("Sink leaking", Priority.URGENT, Category.PLUMBING), START.minus(Duration.ofMinutes(210)));
+        WorkOrder highAtRisk = service.createAt(
+                request("Lights flickering", Priority.HIGH, Category.ELECTRICAL), START.minus(Duration.ofHours(20)));
+        WorkOrder urgentFresh = service.create(request("Power outage", Priority.URGENT, Category.ELECTRICAL));
+        WorkOrder urgentOverdue = service.createAt(
+                request("HVAC not cooling", Priority.URGENT, Category.HVAC), START.minus(Duration.ofHours(5)));
+        WorkOrder completed = service.createAt(
+                request("Replace filter", Priority.URGENT, Category.HVAC), START.minus(Duration.ofMinutes(210)));
+        service.assign(completed.id(), "Jordan Lee");
+        service.changeStatus(completed.id(), Status.IN_PROGRESS, null);
+        service.changeStatus(completed.id(), Status.COMPLETED, null);
+        return new AtRiskMix(urgentAtRisk, highAtRisk, urgentFresh, urgentOverdue, completed);
+    }
+
+    private record AtRiskMix(WorkOrder urgentAtRisk, WorkOrder highAtRisk, WorkOrder urgentFresh,
+                             WorkOrder urgentOverdue, WorkOrder completed) {
+    }
+
+    private List<String> ids(WorkOrderFilter filter) {        return service.list(filter).stream().map(WorkOrder::id).toList();
     }
 
     private static CreateWorkOrderRequest request(String title, Priority priority, Category category) {

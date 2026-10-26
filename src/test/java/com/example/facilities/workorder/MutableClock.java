@@ -6,12 +6,12 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 
-final class MutableClock extends Clock {
+public final class MutableClock extends Clock {
 
     private Instant instant;
     private final ZoneId zone;
 
-    MutableClock(Instant start) {
+    public MutableClock(Instant start) {
         this(start, ZoneOffset.UTC);
     }
 
@@ -20,7 +20,7 @@ final class MutableClock extends Clock {
         this.zone = zone;
     }
 
-    void advance(Duration duration) {
+    public void advance(Duration duration) {
         instant = instant.plus(duration);
     }
 

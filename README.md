@@ -23,8 +23,10 @@ response target set by its priority.
 | Medium | 72 hours |
 | Low | 7 days |
 
-A work order is overdue when it is still active after its due time. Status
-changes follow a fixed workflow:
+A work order is overdue when it is still active after its due time. It is at
+risk when it is still active, at least 75% of its response window has passed,
+and it is not yet overdue (for example, an Urgent order created at 09:00 is at
+risk from 12:00 through 13:00). Status changes follow a fixed workflow:
 
 - **Open → Assigned** happens only through the assign action.
 - **Assigned → In progress**, and **In progress ⇄ On hold**.
@@ -32,18 +34,18 @@ changes follow a fixed workflow:
 - Any active work order can move to **Cancelled**.
 
 Completed and cancelled work orders are closed: they cannot be reassigned or
-moved again, and they are never overdue.
+moved again, and they are never overdue or at risk.
 
 ## API
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/work-orders` | List work orders. Optional filters: `status`, `priority`, `category`, `overdue`, `q` (search ID, title, location, people) |
+| `GET` | `/api/work-orders` | List work orders. Optional filters: `status`, `priority`, `category`, `overdue`, `atRisk`, `q` (search ID, title, location, people) |
 | `POST` | `/api/work-orders` | Create a work order (`title`, `location`, `category`, `priority`, `requester`, optional `description`) |
 | `GET` | `/api/work-orders/{id}` | Get one work order with its activity history |
 | `POST` | `/api/work-orders/{id}/assign` | Assign or reassign a technician (`assignee`) |
 | `POST` | `/api/work-orders/{id}/status` | Change status (`status`, optional `note`) |
-| `GET` | `/api/work-orders/summary` | Active, overdue, urgent, and per-status counts |
+| `GET` | `/api/work-orders/summary` | Active, overdue, at-risk, urgent, and per-status counts |
 | `GET` | `/actuator/health` | Health check |
 
 Errors use RFC 9457 problem details: `400` for validation (with an `errors`
@@ -55,7 +57,7 @@ workflow does not allow.
 Requirements: Java 21 and Maven 3.8+.
 
 ```bash
-mvn --batch-mode test          # 28 unit and API tests
+mvn --batch-mode test          # 41 unit and API tests
 mvn spring-boot:run            # http://localhost:8080
 ```
 

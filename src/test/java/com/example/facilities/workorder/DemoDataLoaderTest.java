@@ -16,10 +16,11 @@ class DemoDataLoaderTest {
     void sampleDataCoversActiveOverdueAndCompletedWork() {
         WorkOrderSummary summary = service.summary();
 
-        assertThat(summary.total()).isEqualTo(6);
+        assertThat(summary.total()).isEqualTo(7);
         assertThat(summary.overdue()).isEqualTo(2);
+        assertThat(summary.atRisk()).isEqualTo(1);
         assertThat(summary.byStatus())
-                .containsEntry(Status.OPEN, 2L)
+                .containsEntry(Status.OPEN, 3L)
                 .containsEntry(Status.ASSIGNED, 2L)
                 .containsEntry(Status.IN_PROGRESS, 1L)
                 .containsEntry(Status.COMPLETED, 1L);
