@@ -7,6 +7,7 @@ import com.example.facilities.workorder.WorkOrder;
 import com.example.facilities.workorder.WorkOrderFilter;
 import com.example.facilities.workorder.WorkOrderService;
 import com.example.facilities.workorder.WorkOrderSummary;
+import com.example.facilities.workorder.WorkOrderWorkload;
 import jakarta.validation.Valid;
 import java.net.URI;
 import java.util.List;
@@ -37,8 +38,14 @@ public class WorkOrderController {
             @RequestParam(required = false) Category category,
             @RequestParam(required = false) Boolean overdue,
             @RequestParam(required = false) Boolean atRisk,
+            @RequestParam(required = false) String assignee,
+            @RequestParam(required = false) Boolean unassigned,
             @RequestParam(name = "q", required = false) String query) {
-        WorkOrderFilter filter = new WorkOrderFilter(status, priority, category, overdue, atRisk, query);
+        if (assignee != null && !assignee.isBlank() && Boolean.TRUE.equals(unassigned)) {
+            throw new InvalidFilterException("Use either 'assignee' or 'unassigned', not both");
+        }
+        WorkOrderFilter filter =
+                new WorkOrderFilter(status, priority, category, overdue, atRisk, assignee, unassigned, query);
         return service.list(filter).stream().map(this::toResponse).toList();
     }
 
@@ -53,6 +60,11 @@ public class WorkOrderController {
     @GetMapping("/summary")
     public WorkOrderSummary summary() {
         return service.summary();
+    }
+
+    @GetMapping("/workload")
+    public WorkOrderWorkload workload() {
+        return service.workload();
     }
 
     @GetMapping("/{id}")

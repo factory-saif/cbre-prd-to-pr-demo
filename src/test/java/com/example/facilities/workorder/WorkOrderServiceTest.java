@@ -208,17 +208,17 @@ class WorkOrderServiceTest {
     void atRiskFilterCombinesWithOtherFilters() {
         AtRiskMix mix = seedAtRiskMix();
 
-        assertThat(ids(new WorkOrderFilter(null, null, null, null, true, null)))
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, true, null, null, null)))
                 .containsExactlyInAnyOrder(mix.urgentAtRisk().id(), mix.highAtRisk().id());
-        assertThat(ids(new WorkOrderFilter(null, null, null, null, false, null)))
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, false, null, null, null)))
                 .containsExactlyInAnyOrder(mix.urgentFresh().id(), mix.urgentOverdue().id(), mix.completed().id());
-        assertThat(ids(new WorkOrderFilter(null, Priority.URGENT, null, null, true, null)))
+        assertThat(ids(new WorkOrderFilter(null, Priority.URGENT, null, null, true, null, null, null)))
                 .containsExactly(mix.urgentAtRisk().id());
-        assertThat(ids(new WorkOrderFilter(null, null, null, null, true, "tower")))
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, true, null, null, "tower")))
                 .containsExactlyInAnyOrder(mix.urgentAtRisk().id(), mix.highAtRisk().id());
-        assertThat(ids(new WorkOrderFilter(null, null, null, null, true, "hvac"))).isEmpty();
-        assertThat(ids(new WorkOrderFilter(null, null, null, null, false, "sink"))).isEmpty();
-        assertThat(ids(new WorkOrderFilter(null, null, null, null, false, "hvac")))
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, true, null, null, "hvac"))).isEmpty();
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, false, null, null, "sink"))).isEmpty();
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, false, null, null, "hvac")))
                 .containsExactly(mix.urgentOverdue().id());
     }
 
@@ -229,7 +229,7 @@ class WorkOrderServiceTest {
         WorkOrderSummary summary = service.summary();
 
         assertThat(summary.atRisk())
-                .isEqualTo(ids(new WorkOrderFilter(null, null, null, null, true, null)).size())
+                .isEqualTo(ids(new WorkOrderFilter(null, null, null, null, true, null, null, null)).size())
                 .isEqualTo(2);
         assertThat(summary.overdue()).isEqualTo(1);
     }
@@ -241,12 +241,12 @@ class WorkOrderServiceTest {
         service.assign(leak.id(), "Priya Shah");
         clock.advance(Duration.ofHours(5));
 
-        assertThat(ids(new WorkOrderFilter(null, Priority.URGENT, null, null, null, null)))
+        assertThat(ids(new WorkOrderFilter(null, Priority.URGENT, null, null, null, null, null, null)))
                 .containsExactly(hvac.id(), leak.id());
-        assertThat(ids(new WorkOrderFilter(Status.ASSIGNED, null, null, null, null, null))).containsExactly(leak.id());
-        assertThat(ids(new WorkOrderFilter(null, null, Category.HVAC, true, null, null))).containsExactly(hvac.id());
-        assertThat(ids(new WorkOrderFilter(null, null, null, null, null, "priya"))).containsExactly(leak.id());
-        assertThat(ids(new WorkOrderFilter(null, null, null, null, null, "wo-1002"))).hasSize(1);
+        assertThat(ids(new WorkOrderFilter(Status.ASSIGNED, null, null, null, null, null, null, null))).containsExactly(leak.id());
+        assertThat(ids(new WorkOrderFilter(null, null, Category.HVAC, true, null, null, null, null))).containsExactly(hvac.id());
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, null, null, null, "priya"))).containsExactly(leak.id());
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, null, null, null, "wo-1002"))).hasSize(1);
     }
 
     @Test
@@ -277,6 +277,124 @@ class WorkOrderServiceTest {
         assertThat(summary.urgentActive()).isEqualTo(1);
         assertThat(summary.byStatus()).containsEntry(Status.OPEN, 2L).containsEntry(Status.CANCELLED, 1L)
                 .containsEntry(Status.COMPLETED, 0L);
+    }
+
+    @Test
+    void workloadCountsOnlyActiveOrdersPerTechnicianAndUnassigned() {
+        WorkOrder assigned = service.create(request("No hot water", Priority.URGENT, Category.PLUMBING));
+        service.assign(assigned.id(), "Priya Shah");
+        WorkOrder inProgress = service.create(request("Power outage", Priority.LOW, Category.ELECTRICAL));
+        service.assign(inProgress.id(), "Priya Shah");
+        service.changeStatus(inProgress.id(), Status.IN_PROGRESS, null);
+        WorkOrder onHold = service.create(request("HVAC not cooling", Priority.LOW, Category.HVAC));
+        service.assign(onHold.id(), "Priya Shah");
+        service.changeStatus(onHold.id(), Status.IN_PROGRESS, null);
+        service.changeStatus(onHold.id(), Status.ON_HOLD, null);
+        WorkOrder completed = service.create(request("Replace filter", Priority.URGENT, Category.HVAC));
+        service.assign(completed.id(), "Priya Shah");
+        service.changeStatus(completed.id(), Status.IN_PROGRESS, null);
+        service.changeStatus(completed.id(), Status.COMPLETED, null);
+        WorkOrder cancelled = service.create(request("Duplicate", Priority.URGENT, Category.GENERAL));
+        service.assign(cancelled.id(), "Alex Kim");
+        service.changeStatus(cancelled.id(), Status.CANCELLED, null);
+        service.create(request("Lights flickering", Priority.URGENT, Category.ELECTRICAL));
+        service.create(request("Paint touch-up", Priority.LOW, Category.GENERAL));
+        WorkOrder cancelledOpen = service.create(request("Wrong building", Priority.URGENT, Category.GENERAL));
+        service.changeStatus(cancelledOpen.id(), Status.CANCELLED, null);
+        clock.advance(Duration.ofHours(5));
+
+        WorkOrderWorkload workload = service.workload();
+
+        assertThat(workload.technicians()).containsExactly(new TechnicianWorkload("Priya Shah", 3, 1));
+        assertThat(workload.unassigned()).isEqualTo(new WorkloadCount(2, 1));
+
+        service.create(request("Badge reader offline", Priority.URGENT, Category.SECURITY));
+        assertThat(service.workload().unassigned()).isEqualTo(new WorkloadCount(3, 1));
+    }
+
+    @Test
+    void workloadSortsByActiveThenNameCaseInsensitively() {
+        WorkOrder sam = service.create(request("Deep clean", Priority.MEDIUM, Category.CLEANING));
+        service.assign(sam.id(), "sam Rivera");
+        WorkOrder priya = service.create(request("Sink leaking", Priority.HIGH, Category.PLUMBING));
+        service.assign(priya.id(), "Priya Shah");
+        WorkOrder jordan = service.create(request("HVAC not cooling", Priority.URGENT, Category.HVAC));
+        service.assign(jordan.id(), "Jordan Lee");
+
+        assertThat(service.workload().technicians()).extracting(TechnicianWorkload::assignee)
+                .containsExactly("Jordan Lee", "Priya Shah", "sam Rivera");
+
+        service.assign(jordan.id(), "Priya Shah");
+
+        assertThat(service.workload().technicians()).containsExactly(
+                new TechnicianWorkload("Priya Shah", 2, 0),
+                new TechnicianWorkload("sam Rivera", 1, 0));
+    }
+
+    @Test
+    void workloadGroupsNameCasingVariants() {
+        WorkOrder first = service.create(request("HVAC not cooling", Priority.URGENT, Category.HVAC));
+        service.assign(first.id(), "Jordan Lee");
+        clock.advance(Duration.ofMinutes(5));
+        WorkOrder second = service.create(request("Replace filter", Priority.LOW, Category.HVAC));
+        service.assign(second.id(), " jordan lee ");
+
+        assertThat(service.workload().technicians()).containsExactly(new TechnicianWorkload("Jordan Lee", 2, 0));
+    }
+
+    @Test
+    void workloadDropsTechnicianWhoseLastActiveOrderCloses() {
+        WorkOrder completing = service.create(request("Replace filter", Priority.MEDIUM, Category.HVAC));
+        service.assign(completing.id(), "Jordan Lee");
+        service.changeStatus(completing.id(), Status.IN_PROGRESS, null);
+        WorkOrder cancelling = service.create(request("Sink leaking", Priority.HIGH, Category.PLUMBING));
+        service.assign(cancelling.id(), "Priya Shah");
+
+        service.changeStatus(completing.id(), Status.ON_HOLD, null);
+        assertThat(service.workload().technicians()).containsExactly(
+                new TechnicianWorkload("Jordan Lee", 1, 0),
+                new TechnicianWorkload("Priya Shah", 1, 0));
+        service.changeStatus(completing.id(), Status.IN_PROGRESS, null);
+        assertThat(service.workload().technicians()).containsExactly(
+                new TechnicianWorkload("Jordan Lee", 1, 0),
+                new TechnicianWorkload("Priya Shah", 1, 0));
+
+        service.changeStatus(completing.id(), Status.COMPLETED, null);
+        service.changeStatus(cancelling.id(), Status.CANCELLED, null);
+
+        assertThat(service.workload().technicians()).isEmpty();
+        assertThat(service.workload().unassigned()).isEqualTo(new WorkloadCount(0, 0));
+    }
+
+    @Test
+    void assigneeFilterIsExactAndCaseInsensitive() {
+        WorkOrder hvac = service.create(request("HVAC not cooling", Priority.URGENT, Category.HVAC));
+        service.assign(hvac.id(), "Jordan Lee");
+        WorkOrder done = service.create(request("Replace filter", Priority.LOW, Category.HVAC));
+        service.assign(done.id(), "Jordan Lee");
+        service.changeStatus(done.id(), Status.IN_PROGRESS, null);
+        service.changeStatus(done.id(), Status.COMPLETED, null);
+        service.create(request("Lights flickering", Priority.HIGH, Category.ELECTRICAL));
+
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, null, " jordan lee ", null, null)))
+                .containsExactly(hvac.id(), done.id());
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, null, "Jordan", null, null))).isEmpty();
+        assertThat(ids(new WorkOrderFilter(Status.COMPLETED, null, null, null, null, "Jordan Lee", null, null)))
+                .containsExactly(done.id());
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, null, "  ", null, null))).hasSize(3);
+    }
+
+    @Test
+    void unassignedFilterReturnsOnlyActiveOrdersWithoutTechnician() {
+        WorkOrder open = service.create(request("Lights flickering", Priority.HIGH, Category.ELECTRICAL));
+        WorkOrder assigned = service.create(request("HVAC not cooling", Priority.URGENT, Category.HVAC));
+        service.assign(assigned.id(), "Jordan Lee");
+        WorkOrder cancelled = service.create(request("Duplicate", Priority.LOW, Category.GENERAL));
+        service.changeStatus(cancelled.id(), Status.CANCELLED, null);
+
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, null, null, true, null)))
+                .containsExactly(open.id());
+        assertThat(ids(new WorkOrderFilter(null, null, null, null, null, null, false, null))).hasSize(3);
     }
 
     @Test

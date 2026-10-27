@@ -40,12 +40,13 @@ moved again, and they are never overdue or at risk.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
-| `GET` | `/api/work-orders` | List work orders. Optional filters: `status`, `priority`, `category`, `overdue`, `atRisk`, `q` (search ID, title, location, people) |
+| `GET` | `/api/work-orders` | List work orders. Optional filters: `status`, `priority`, `category`, `overdue`, `atRisk`, `assignee` (exact technician name, case-insensitive), `unassigned=true` (active work orders with no technician), `q` (search ID, title, location, people). `assignee` and `unassigned=true` cannot be combined |
 | `POST` | `/api/work-orders` | Create a work order (`title`, `location`, `category`, `priority`, `requester`, optional `description`) |
 | `GET` | `/api/work-orders/{id}` | Get one work order with its activity history |
 | `POST` | `/api/work-orders/{id}/assign` | Assign or reassign a technician (`assignee`) |
 | `POST` | `/api/work-orders/{id}/status` | Change status (`status`, optional `note`) |
 | `GET` | `/api/work-orders/summary` | Active, overdue, at-risk, urgent, and per-status counts |
+| `GET` | `/api/work-orders/workload` | Active and overdue counts per technician (busiest first, then by name), plus the unassigned queue |
 | `GET` | `/actuator/health` | Health check |
 
 Errors use RFC 9457 problem details: `400` for validation (with an `errors`
@@ -57,7 +58,7 @@ workflow does not allow.
 Requirements: Java 21 and Maven 3.8+.
 
 ```bash
-mvn --batch-mode test          # 41 unit and API tests
+mvn --batch-mode test          # 55 unit and API tests
 mvn spring-boot:run            # http://localhost:8080
 ```
 

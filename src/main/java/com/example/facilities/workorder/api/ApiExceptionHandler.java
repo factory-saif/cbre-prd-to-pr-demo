@@ -49,6 +49,11 @@ class ApiExceptionHandler {
                 "Unsupported value for parameter '" + ex.getName() + "'");
     }
 
+    @ExceptionHandler(InvalidFilterException.class)
+    ResponseEntity<ProblemDetail> invalidFilter(InvalidFilterException ex) {
+        return problem(HttpStatus.BAD_REQUEST, "Malformed request", ex.getMessage());
+    }
+
     private static ResponseEntity<ProblemDetail> problem(HttpStatus status, String title, String detail) {
         ProblemDetail body = ProblemDetail.forStatusAndDetail(status, detail);
         body.setTitle(title);

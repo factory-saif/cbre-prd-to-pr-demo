@@ -151,6 +151,15 @@ class WorkOrderApiTest {
     }
 
     @Test
+    void workloadIsEmptyWithoutWorkOrders() throws Exception {
+        mvc.perform(get("/api/work-orders/workload"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.technicians", hasSize(0)))
+                .andExpect(jsonPath("$.unassigned.active").value(0))
+                .andExpect(jsonPath("$.unassigned.overdue").value(0));
+    }
+
+    @Test
     void webUiAndHealthAreServed() throws Exception {
         mvc.perform(get("/index.html"))
                 .andExpect(status().isOk())

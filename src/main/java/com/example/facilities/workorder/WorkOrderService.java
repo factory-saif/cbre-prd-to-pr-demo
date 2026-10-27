@@ -6,7 +6,9 @@ import java.time.Instant;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -100,6 +102,30 @@ public class WorkOrderService {
                 .filter(order -> !order.status().isClosed() && order.priority() == Priority.URGENT)
                 .count();
         return new WorkOrderSummary(all.size(), active, overdue, atRisk, urgentActive, byStatus);
+    }
+
+    public WorkOrderWorkload workload() {
+        Instant now = clock.instant();
+        List<WorkOrder> active = repository.findAll().stream()
+                .filter(order -> !order.status().isClosed())
+                .toList();
+        List<WorkOrder> unassigned = active.stream().filter(order -> order.assignee() == null).toList();
+        Map<String, List<WorkOrder>> byTechnician = active.stream()
+                .filter(order -> order.assignee() != null)
+                .collect(Collectors.groupingBy(order -> order.assignee().trim().toLowerCase(Locale.ROOT)));
+        List<TechnicianWorkload> technicians = byTechnician.values().stream()
+                .map(orders -> new TechnicianWorkload(
+                        orders.stream().min(Comparator.comparing(WorkOrder::createdAt)).orElseThrow().assignee().trim(),
+                        orders.size(),
+                        countOverdue(orders, now)))
+                .sorted(Comparator.comparingLong(TechnicianWorkload::active).reversed()
+                        .thenComparing(TechnicianWorkload::assignee, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        return new WorkOrderWorkload(technicians, new WorkloadCount(unassigned.size(), countOverdue(unassigned, now)));
+    }
+
+    private static long countOverdue(List<WorkOrder> orders, Instant now) {
+        return orders.stream().filter(order -> order.isOverdueAt(now)).count();
     }
 
     private static String trimToNull(String value) {
