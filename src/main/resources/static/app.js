@@ -63,6 +63,7 @@ async function loadSummary() {
   const summary = await api('/api/work-orders/summary');
   $('summary-active').textContent = summary.active;
   $('summary-overdue').textContent = summary.overdue;
+  $('summary-at-risk').textContent = summary.atRisk;
   $('summary-urgent').textContent = summary.urgentActive;
   $('summary-completed').textContent = summary.byStatus.COMPLETED;
 }
@@ -75,6 +76,7 @@ function currentFilters() {
   if ($('filter-priority').value) params.set('priority', $('filter-priority').value);
   if ($('filter-category').value) params.set('category', $('filter-category').value);
   if ($('filter-overdue').checked) params.set('overdue', 'true');
+  if ($('filter-at-risk').checked) params.set('atRisk', 'true');
   return params.toString();
 }
 
@@ -102,12 +104,23 @@ function renderRows(orders) {
       badgeCell(label(order.priority), `priority-${order.priority.toLowerCase()}`),
       badgeCell(label(order.status), `status-${order.status.toLowerCase()}`),
       el('td', {}, order.assignee || 'Unassigned'),
-      el('td', { class: order.overdue ? 'overdue' : '' }, dueText(order)),
+      dueCell(order),
     );
     row.addEventListener('click', () => selectOrder(order.id));
     row.addEventListener('keydown', (event) => { if (event.key === 'Enter') selectOrder(order.id); });
     rows.append(row);
   });
+}
+
+function dueCell(order) {
+  const classes = [];
+  if (order.overdue) classes.push('overdue');
+  if (order.atRisk) classes.push('at-risk');
+  const cell = el('td', { class: classes.join(' ') }, dueText(order));
+  if (order.atRisk) {
+    cell.append(' ', el('span', { class: 'badge at-risk-badge', 'data-testid': `at-risk-badge-${order.id}` }, 'At risk'));
+  }
+  return cell;
 }
 
 function cellWithSub(main, sub) {
@@ -244,7 +257,7 @@ $('filter-query').addEventListener('input', () => {
   clearTimeout(searchTimer);
   searchTimer = setTimeout(loadOrders, 200);
 });
-['filter-status', 'filter-priority', 'filter-category', 'filter-overdue']
+['filter-status', 'filter-priority', 'filter-category', 'filter-overdue', 'filter-at-risk']
   .forEach((id) => $(id).addEventListener('change', loadOrders));
 
 fillSelect($('filter-status'), STATUSES);

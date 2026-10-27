@@ -22,6 +22,7 @@
     <section class="summary" aria-label="Summary" data-testid="summary">
       <article class="card"><span class="label">Active</span><strong id="summary-active" data-testid="summary-active">–</strong></article>
       <article class="card warn"><span class="label">Overdue</span><strong id="summary-overdue" data-testid="summary-overdue">–</strong></article>
+      <article class="card risk"><span class="label">At risk</span><strong id="summary-at-risk" data-testid="summary-at-risk">–</strong></article>
       <article class="card"><span class="label">Urgent active</span><strong id="summary-urgent" data-testid="summary-urgent">–</strong></article>
       <article class="card ok"><span class="label">Completed</span><strong id="summary-completed" data-testid="summary-completed">–</strong></article>
     </section>
@@ -32,6 +33,7 @@
       <select id="filter-priority" aria-label="Priority" data-testid="filter-priority"><option value="">All priorities</option></select>
       <select id="filter-category" aria-label="Category" data-testid="filter-category"><option value="">All categories</option></select>
       <label class="checkbox"><input id="filter-overdue" type="checkbox" data-testid="filter-overdue"> Overdue only</label>
+      <label class="checkbox"><input id="filter-at-risk" type="checkbox" data-testid="filter-at-risk"> At risk only</label>
     </section>
 
     <section class="layout">
