@@ -1,5 +1,6 @@
 package com.example.facilities.workorder.api;
 
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -154,7 +155,9 @@ class WorkOrderApiTest {
         mvc.perform(get("/index.html"))
                 .andExpect(status().isOk())
                 .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.content()
-                        .string(containsString("Facilities Desk")));
+                        .string(allOf(containsString("Facilities Desk"),
+                                containsString("data-testid=\"summary-at-risk\""),
+                                containsString("data-testid=\"filter-at-risk\""))));
         mvc.perform(get("/actuator/health"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("UP"));
