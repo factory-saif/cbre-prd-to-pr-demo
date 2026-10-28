@@ -4,8 +4,8 @@ A small, generic facilities work-order tracker used to show Factory taking a
 request from a Linear issue to a reviewed, QA-verified pull request with no
 human steps in between.
 
-> **Demo identity:** Facilities Desk is a fictional application built for a CBRE
-> conversation. It uses no CBRE assets, data, systems, or customer information.
+> **Demo identity:** Facilities Desk is a fictional application built for a Demo
+> conversation. 
 > All data is generated in memory at startup.
 
 ![Facilities Desk](docs/facilities-desk.png)
