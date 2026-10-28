@@ -9,7 +9,11 @@ import com.example.facilities.workorder.WorkOrderService;
 import com.example.facilities.workorder.WorkOrderSummary;
 import jakarta.validation.Valid;
 import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -23,6 +27,9 @@ import org.springframework.web.util.UriComponentsBuilder;
 @RestController
 @RequestMapping("/api/work-orders")
 public class WorkOrderController {
+
+    private static final MediaType TEXT_CSV = new MediaType("text", "csv", StandardCharsets.UTF_8);
+    private static final String EXPORT_FILENAME = "work-orders.csv";
 
     private final WorkOrderService service;
 
@@ -53,6 +60,22 @@ public class WorkOrderController {
     @GetMapping("/summary")
     public WorkOrderSummary summary() {
         return service.summary();
+    }
+
+    @GetMapping("/export.csv")
+    public ResponseEntity<String> exportCsv(
+            @RequestParam(required = false) Status status,
+            @RequestParam(required = false) Priority priority,
+            @RequestParam(required = false) Category category,
+            @RequestParam(required = false) Boolean overdue,
+            @RequestParam(required = false) Boolean atRisk,
+            @RequestParam(name = "q", required = false) String query) {
+        WorkOrderFilter filter = new WorkOrderFilter(status, priority, category, overdue, atRisk, query);
+        return ResponseEntity.ok()
+                .contentType(TEXT_CSV)
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment().filename(EXPORT_FILENAME).build().toString())
+                .body(WorkOrderCsv.write(service.list(filter)));
     }
 
     @GetMapping("/{id}")
