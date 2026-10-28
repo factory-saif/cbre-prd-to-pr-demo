@@ -46,6 +46,7 @@ moved again, and they are never overdue or at risk.
 | `POST` | `/api/work-orders/{id}/assign` | Assign or reassign a technician (`assignee`) |
 | `POST` | `/api/work-orders/{id}/status` | Change status (`status`, optional `note`) |
 | `GET` | `/api/work-orders/summary` | Active, overdue, at-risk, urgent, and per-status counts |
+| `GET` | `/api/work-orders/export.csv` | Download the filtered list as an RFC 4180 CSV file (same filters and order as `GET /api/work-orders`) |
 | `GET` | `/actuator/health` | Health check |
 
 Errors use RFC 9457 problem details: `400` for validation (with an `errors`
@@ -57,7 +58,7 @@ workflow does not allow.
 Requirements: Java 21 and Maven 3.8+.
 
 ```bash
-mvn --batch-mode test          # 41 unit and API tests
+mvn --batch-mode test          # 61 unit and API tests
 mvn spring-boot:run            # http://localhost:8080
 ```
 
