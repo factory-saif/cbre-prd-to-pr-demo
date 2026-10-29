@@ -33,7 +33,7 @@ flowchart TD
 | 5 | E2E QA | GitHub Action, required check | PR opened, reopened, and every push | Pull request diff, running app | One sticky QA report comment, evidence artifacts |
 | 6 | PR Babysitter | Scheduled automation, also chained after Dev | Every 10 minutes | Open `story/*` PRs, checks, review threads | Fix commits, thread replies, `## Fix Loop #n` comment, final labels |
 
-Every stage loads one skill, `cbre-demo-prd-to-pr`, and runs only its own
+Every stage loads one skill, `prd-to-pr-demo`, and runs only its own
 section. The stage logic lives in this repository, versioned with the code.
 
 ## Why a PR Babysitter, not a return to Dev
@@ -58,7 +58,7 @@ section. The stage logic lives in this repository, versioned with the code.
 ## Linear labels
 
 The pipeline reuses labels that already exist in the workspace, so each label
-has the meaning below only on issues in the `CBRE Demo` project.
+has the meaning below only on issues in the `Demo` project.
 
 | Label | Set by | Meaning |
 | --- | --- | --- |
@@ -87,8 +87,8 @@ has the meaning below only on issues in the `CBRE Demo` project.
 | Code Review workflow (`install-code-review`) | Done |
 | E2E QA workflow and skills (`install-qa`) | Done |
 | Build, unit test, and container workflow (`ci.yml`) | Done |
-| `cbre-demo-prd-to-pr` skill | Done |
-| Linear project `CBRE Demo` and sample issue | Done |
+| `prd-to-pr-demo` skill | Done |
+| Linear project `Demo` and sample issue | Done |
 | Linear labels (existing labels, mapped above) | Done |
 | Linear delegation to Factory | Pending: verify in Factory Linear settings |
 | Planner, Dev, and PR Babysitter automations | Done, on `saif-poc-sandbox` |

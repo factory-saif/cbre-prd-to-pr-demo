@@ -1,7 +1,7 @@
 # Stage: prd
 
 Turn one Linear issue into a structured PRD. This stage runs when a person
-assigns a `CBRE Demo` issue to Factory or mentions `@Factory` on it. It never
+assigns a `Demo` issue to Factory or mentions `@Factory` on it. It never
 changes the repository: no branches, commits, or pull requests.
 
 ## Get the repository
@@ -11,7 +11,7 @@ repository. If the current directory is not a checkout of it, clone a
 read-only copy into a new private directory and read the skill from there:
 
 ```bash
-WS=$(mktemp -d) && echo "$WS" && git clone --depth 1 https://github.com/factory-saif/cbre-prd-to-pr-demo.git "$WS/repo"
+WS=$(mktemp -d) && echo "$WS" && git clone --depth 1 https://github.com/factory-saif/prd-to-pr-demo.git "$WS/repo"
 ```
 
 Shell variables do not carry over between commands, so note the absolute
@@ -22,7 +22,7 @@ clone fails or you stop early.
 ## Steps
 
 1. Read the issue: title, description, labels, project, and every comment.
-2. Stop if the issue is not in the `CBRE Demo` project.
+2. Stop if the issue is not in the `Demo` project.
 3. Stop if a trusted `## Structured PRD` comment exists (see the signal rule
    in `SKILL.md`), and reply that the PRD already exists. Add `PRD` first if
    it is missing and your Linear tools can change labels.

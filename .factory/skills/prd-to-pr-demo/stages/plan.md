@@ -7,7 +7,7 @@ stories to Dev when their dependencies are done.
 
 ### A. New PRDs
 
-1. List open `CBRE Demo` issues that have no parent issue and have a trusted
+1. List open `Demo` issues that have no parent issue and have a trusted
    `## Structured PRD` comment (see the signal rule in `SKILL.md`). Skip an
    issue when its newest trusted signal comment is `## PRD Questions`. Add
    `PRD` where it is missing, because a delegated PRD session may not be able
@@ -22,7 +22,7 @@ stories to Dev when their dependencies are done.
       under about 300 changed lines. Prefer stories that can be built in
       parallel. Order them so that an API story comes before a UI story that
       depends on it.
-   4. Create each story as a sub-issue of the parent, in the `CBRE Demo`
+   4. Create each story as a sub-issue of the parent, in the `Demo`
       project, team `SED`, state `Todo`. Title: a short imperative sentence.
       The description starts with the heading `## Implementation Plan` and
       contains:
@@ -46,7 +46,7 @@ stories to Dev when their dependencies are done.
 
 ### B. Release waiting stories
 
-1. List open `CBRE Demo` stories (issues with a parent) that have no
+1. List open `Demo` stories (issues with a parent) that have no
    `Story` label.
 2. For each one, read **Depends on** from its plan. Add `Story` when
    every listed story is in `Done`.

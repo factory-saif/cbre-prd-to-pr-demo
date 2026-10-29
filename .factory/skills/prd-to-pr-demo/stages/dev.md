@@ -4,12 +4,12 @@ Implement released stories and open one pull request per story.
 
 ## Select work
 
-1. List open `CBRE Demo` issues labeled `Story` without `Implementation`,
+1. List open `Demo` issues labeled `Story` without `Implementation`,
    oldest first. Take at most two per run.
 2. For each story, skip it when any of these is true, and add `Implementation` if a
    pull request already exists:
    - A comment starts with `## Pull Request`.
-   - `gh pr list --repo factory-saif/cbre-prd-to-pr-demo --head story/<KEY> --state all`
+   - `gh pr list --repo factory-saif/prd-to-pr-demo --head story/<KEY> --state all`
      returns a pull request.
    - The remote branch `story/<KEY>` exists and was pushed in the last 30
      minutes (another Dev run is working on it).
