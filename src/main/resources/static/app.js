@@ -132,7 +132,7 @@ function dueCell(order) {
 
 function statusCell(order) {
   const cell = badgeCell(label(order.status), `status-${order.status.toLowerCase()}`);
-  if (order.reopenCount > 0) {
+  if (order.reopened) {
     cell.append(' ', el('span', { class: 'badge reopened-badge', 'data-testid': `reopened-badge-${order.id}` }, 'Reopened'));
   }
   return cell;
@@ -185,6 +185,7 @@ function renderDetail(order) {
   $('assignee-input').value = order.assignee || '';
 
   $('reopen-form').hidden = !canReopen(order);
+  $('reopen-form').dataset.orderId = order.id;
   $('reopen-reason').value = '';
 
   const buttons = $('status-buttons');
@@ -242,19 +243,20 @@ $('assign-form').addEventListener('submit', async (event) => {
 
 $('reopen-form').addEventListener('submit', async (event) => {
   event.preventDefault();
+  const orderId = event.currentTarget.dataset.orderId;
   const reason = $('reopen-reason').value.trim();
   if (!reason) {
     showError($('detail-error'), 'Enter a reason to reopen this work order');
     return;
   }
   try {
-    const order = await api(`/api/work-orders/${encodeURIComponent(state.selectedId)}/reopen`, {
+    const order = await api(`/api/work-orders/${encodeURIComponent(orderId)}/reopen`, {
       method: 'POST',
       body: JSON.stringify({ reason }),
     });
     await refreshSelected(order);
   } catch (error) {
-    const fieldMessage = error.fieldErrors.reason ? `Reason ${error.fieldErrors.reason}` : '';
+    const fieldMessage = error.fieldErrors?.reason ? `Reason ${error.fieldErrors.reason}` : '';
     showError($('detail-error'), fieldMessage || error.message);
   }
 });

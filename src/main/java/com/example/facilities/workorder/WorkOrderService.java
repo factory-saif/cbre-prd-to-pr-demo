@@ -57,7 +57,9 @@ public class WorkOrderService {
         return repository.findById(id).orElseThrow(() -> new WorkOrderNotFoundException(id));
     }
 
-    public WorkOrder assign(String id, String assignee) {
+    // Synchronized so the timestamp is read inside the monitor; otherwise a
+    // concurrent mutation could record a later time before this one is applied.
+    public synchronized WorkOrder assign(String id, String assignee) {
         return assignAt(id, assignee, clock.instant());
     }
 
@@ -71,7 +73,7 @@ public class WorkOrderService {
         return order;
     }
 
-    public WorkOrder changeStatus(String id, Status next, String note) {
+    public synchronized WorkOrder changeStatus(String id, Status next, String note) {
         return changeStatusAt(id, next, note, clock.instant());
     }
 

@@ -4,8 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.example.facilities.workorder.api.CreateWorkOrderRequest;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -113,6 +117,37 @@ class WorkOrderServiceTest {
             assertThat(entry.at()).isEqualTo(completedAt);
             assertThat(entry.message()).isEqualTo("Status changed from In progress to Completed: Drain cleared");
         });
+    }
+
+    @Test
+    void assignAndChangeStatusReadTheClockWhileHoldingTheServiceLock() {
+        List<Boolean> lockHeldAtClockRead = new ArrayList<>();
+        WorkOrderService[] probed = new WorkOrderService[1];
+        Clock probe = new Clock() {
+            @Override
+            public ZoneId getZone() {
+                return ZoneOffset.UTC;
+            }
+
+            @Override
+            public Clock withZone(ZoneId zone) {
+                return this;
+            }
+
+            @Override
+            public Instant instant() {
+                lockHeldAtClockRead.add(Thread.holdsLock(probed[0]));
+                return START;
+            }
+        };
+        probed[0] = new WorkOrderService(new WorkOrderRepository(), probe);
+        WorkOrder order = probed[0].create(request("Replace filter", Priority.MEDIUM, Category.HVAC));
+        lockHeldAtClockRead.clear();
+
+        probed[0].assign(order.id(), "Priya Shah");
+        probed[0].changeStatus(order.id(), Status.IN_PROGRESS, null);
+
+        assertThat(lockHeldAtClockRead).isNotEmpty().containsOnly(true);
     }
 
     @Test
