@@ -36,6 +36,14 @@ risk from 12:00 through 13:00). Status changes follow a fixed workflow:
 Completed and cancelled work orders are closed: they cannot be reassigned or
 moved again, and they are never overdue or at risk.
 
+A completed work order can be reopened through the reopen action (never the
+status action) within 7 days of its latest completion, inclusive. Reopening
+needs a reason, returns the order to **In progress** with the same technician,
+clears `completedAt`, and restarts the response target from the reopen time,
+so overdue and at-risk use the new window. Work-order responses include
+`reopened`, `reopenCount`, and `reopenedAt`. Cancelled orders cannot be
+reopened.
+
 ## API
 
 | Method | Path | Purpose |
@@ -45,19 +53,20 @@ moved again, and they are never overdue or at risk.
 | `GET` | `/api/work-orders/{id}` | Get one work order with its activity history |
 | `POST` | `/api/work-orders/{id}/assign` | Assign or reassign a technician (`assignee`) |
 | `POST` | `/api/work-orders/{id}/status` | Change status (`status`, optional `note`) |
+| `POST` | `/api/work-orders/{id}/reopen` | Reopen a completed work order within 7 days (`reason`, 1–500 characters) |
 | `GET` | `/api/work-orders/summary` | Active, overdue, at-risk, urgent, and per-status counts |
 | `GET` | `/actuator/health` | Health check |
 
 Errors use RFC 9457 problem details: `400` for validation (with an `errors`
-map per field), `404` for an unknown ID, and `409` for a status change the
-workflow does not allow.
+map per field), `404` for an unknown ID, and `409` for a status change or
+reopen the workflow does not allow.
 
 ## Run locally
 
 Requirements: Java 21 and Maven 3.8+.
 
 ```bash
-mvn --batch-mode test          # 41 unit and API tests
+mvn --batch-mode test          # 54 unit and API tests
 mvn spring-boot:run            # http://localhost:8080
 ```
 

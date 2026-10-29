@@ -14,13 +14,16 @@ public class WorkOrder {
     private final Priority priority;
     private final String requester;
     private final Instant createdAt;
-    private final Instant dueAt;
     private final List<ActivityEntry> activity = new ArrayList<>();
 
     private Status status;
     private String assignee;
     private Instant updatedAt;
     private Instant completedAt;
+    private Instant dueAt;
+    private Instant windowStart;
+    private int reopenCount;
+    private Instant reopenedAt;
 
     WorkOrder(String id, String title, String description, String location, Category category,
               Priority priority, String requester, Instant createdAt) {
@@ -32,6 +35,7 @@ public class WorkOrder {
         this.priority = priority;
         this.requester = requester;
         this.createdAt = createdAt;
+        this.windowStart = createdAt;
         this.dueAt = createdAt.plus(priority.responseTarget());
         this.status = Status.OPEN;
         this.updatedAt = createdAt;
@@ -61,12 +65,24 @@ public class WorkOrder {
         touch(at, message);
     }
 
+    void reopen(Instant at, String reason) {
+        String message = "Status changed from " + status.displayName() + " to "
+                + Status.IN_PROGRESS.displayName() + ": Reopened: " + reason;
+        status = Status.IN_PROGRESS;
+        completedAt = null;
+        reopenedAt = at;
+        windowStart = at;
+        dueAt = at.plus(priority.responseTarget());
+        reopenCount++;
+        touch(at, message);
+    }
+
     public boolean isOverdueAt(Instant now) {
         return !status.isClosed() && now.isAfter(dueAt);
     }
 
     public boolean isAtRiskAt(Instant now) {
-        Instant atRiskFrom = createdAt.plus(priority.responseTarget().multipliedBy(3).dividedBy(4));
+        Instant atRiskFrom = windowStart.plus(priority.responseTarget().multipliedBy(3).dividedBy(4));
         return !status.isClosed() && !now.isBefore(atRiskFrom) && !now.isAfter(dueAt);
     }
 
@@ -125,6 +141,18 @@ public class WorkOrder {
 
     public Instant completedAt() {
         return completedAt;
+    }
+
+    public int reopenCount() {
+        return reopenCount;
+    }
+
+    public Instant reopenedAt() {
+        return reopenedAt;
+    }
+
+    public boolean isReopened() {
+        return reopenCount > 0;
     }
 
     public List<ActivityEntry> activity() {

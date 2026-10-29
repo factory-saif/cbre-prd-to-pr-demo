@@ -24,6 +24,9 @@ public record WorkOrderResponse(
         Instant completedAt,
         boolean overdue,
         boolean atRisk,
+        boolean reopened,
+        int reopenCount,
+        Instant reopenedAt,
         List<Status> nextStatuses,
         List<ActivityEntry> activity) {
 
@@ -44,6 +47,9 @@ public record WorkOrderResponse(
                 order.completedAt(),
                 overdue,
                 atRisk,
+                order.isReopened(),
+                order.reopenCount(),
+                order.reopenedAt(),
                 order.status().nextStatuses(),
                 order.activity());
     }

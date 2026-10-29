@@ -2,6 +2,7 @@ package com.example.facilities.workorder;
 
 import com.example.facilities.workorder.api.CreateWorkOrderRequest;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -11,6 +12,8 @@ import org.springframework.stereotype.Service;
 
 @Service
 public class WorkOrderService {
+
+    static final Duration REOPEN_WINDOW = Duration.ofDays(7);
 
     private static final Comparator<WorkOrder> DISPLAY_ORDER = Comparator
             .comparing((WorkOrder order) -> order.status().isClosed())
@@ -74,6 +77,20 @@ public class WorkOrderService {
                     + order.status().displayName() + " to " + next.displayName());
         }
         order.moveTo(next, clock.instant(), trimToNull(note));
+        return order;
+    }
+
+    public synchronized WorkOrder reopen(String id, String reason) {
+        WorkOrder order = get(id);
+        if (order.status() != Status.COMPLETED) {
+            throw new InvalidTransitionException("Cannot reopen " + id + ": only completed work orders can be reopened");
+        }
+        Instant now = clock.instant();
+        if (now.isAfter(order.completedAt().plus(REOPEN_WINDOW))) {
+            throw new InvalidTransitionException("Cannot reopen " + id
+                    + ": it was completed more than " + REOPEN_WINDOW.toDays() + " days ago");
+        }
+        order.reopen(now, reason.trim());
         return order;
     }
 
