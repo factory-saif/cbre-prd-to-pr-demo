@@ -138,6 +138,38 @@ class WorkOrderNotesApiTest {
     }
 
     @Test
+    void noteCountIsKeptWhenAnOrderWithNotesIsClosed() throws Exception {
+        String completed = createAndStart();
+        mvc.perform(addNote(completed, TEXT, AUTHOR)).andExpect(status().isOk());
+        mvc.perform(addNote(completed, "Tenant not home, rescheduled", AUTHOR)).andExpect(status().isOk());
+        mvc.perform(statusChange(completed, "COMPLETED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.noteCount").value(2));
+        String cancelled = create();
+        mvc.perform(addNote(cancelled, TEXT, AUTHOR)).andExpect(status().isOk());
+        mvc.perform(statusChange(cancelled, "CANCELLED"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.noteCount").value(1));
+
+        mvc.perform(addNote(completed, TEXT, AUTHOR)).andExpect(status().isConflict());
+        mvc.perform(addNote(cancelled, TEXT, AUTHOR)).andExpect(status().isConflict());
+
+        mvc.perform(get("/api/work-orders/{id}", completed))
+                .andExpect(jsonPath("$.status").value("COMPLETED"))
+                .andExpect(jsonPath("$.noteCount").value(2));
+        mvc.perform(get("/api/work-orders/{id}", cancelled))
+                .andExpect(jsonPath("$.status").value("CANCELLED"))
+                .andExpect(jsonPath("$.noteCount").value(1));
+        String list = mvc.perform(get("/api/work-orders"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        assertThat(JsonPath.<List<Integer>>read(list, "$[?(@.id == '" + completed + "')].noteCount"))
+                .containsExactly(2);
+        assertThat(JsonPath.<List<Integer>>read(list, "$[?(@.id == '" + cancelled + "')].noteCount"))
+                .containsExactly(1);
+    }
+
+    @Test
     void noteTextIsValidated() throws Exception {
         String id = createAndStart();
         int before = activity(id).size();

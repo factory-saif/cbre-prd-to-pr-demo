@@ -51,7 +51,7 @@ public record WorkOrderResponse(
                 order.isReopened(),
                 order.reopenCount(),
                 order.reopenedAt(),
-                order.status().isClosed() ? 0 : order.noteCount(),
+                order.noteCount(),
                 order.status().nextStatuses(),
                 order.activity());
     }

@@ -90,7 +90,7 @@ reopen, priority change, or note the workflow does not allow.
 Requirements: Java 21 and Maven 3.8+.
 
 ```bash
-mvn --batch-mode test          # 93 unit and API tests
+mvn --batch-mode test          # 94 unit and API tests
 mvn spring-boot:run            # http://localhost:8080
 ```
 
