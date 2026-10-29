@@ -24,10 +24,11 @@ Computer, chained after Dev.
    criteria, and missing tests for changed behavior. No style nits.
 4. Classify each finding: **blocking** (P0/P1: wrong behavior, security issue,
    an acceptance criterion not met) or **non-blocking** (P2/P3).
-5. Post or update one pull request comment (find an existing trusted comment
-   starting with `<!-- code-review` and edit it with
-   `gh api -X PATCH repos/factory-saif/prd-to-pr-demo/issues/comments/<id> -f body=...`;
-   otherwise create it with `gh pr comment`). The body:
+5. Post a new pull request comment with `gh pr comment` for this commit.
+   Never edit an earlier review, so the PR keeps the full history of
+   findings, fixes, and re-reviews. When an earlier review exists, add a
+   short "Since the review of `<old short SHA>`" list saying which findings
+   are resolved. The body:
 
    ```markdown
    <!-- code-review sha=<headRefOid> -->

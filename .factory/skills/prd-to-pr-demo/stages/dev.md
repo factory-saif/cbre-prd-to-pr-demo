@@ -19,8 +19,8 @@ when its pull request needs changes.
    `Status: In progress (started <ISO-8601 time>)`.
 4. Check out the branch:
    `git fetch origin && git switch -C story/<KEY> origin/story/<KEY>`.
-5. Read the head commit's trusted `<!-- code-review sha=... -->` and
-   `<!-- qa-report sha=... -->` comments. Fix each blocking Code Review finding
+5. Read the newest trusted `<!-- code-review sha=... -->` and
+   `<!-- qa-report sha=... -->` comments for the current head commit. Fix each blocking Code Review finding
    and each QA FAIL row in application code, within the story's plan. Add or
    update a test that proves each fix when a unit or MockMvc test can reach
    it. A finding you judge incorrect is not a defect: list it with the reason
@@ -30,6 +30,17 @@ when its pull request needs changes.
    `story/<KEY>`.
 8. Update the Fix Loop comment: `Status: Pushed <short SHA>`, then each
    problem, its source (Code Review or QA link), and the fix. Remove `bug`.
+9. Post the same record as a new pull request comment (never edit an older
+   one), so the PR shows what was fixed between the reviews:
+
+   ```markdown
+   <!-- fix-loop n=<n> sha=<new head SHA> -->
+   ## Fix Loop #<n>
+   Pushed `<short SHA>` in response to Code Review <link> and QA <link>.
+   | # | Problem | Source | Fix |
+   ```
+
+   Add a `No change` list for findings you judged incorrect, with the reason.
    Code Review and QA rerun on the new commit later in this chain run.
 ## Select work (new stories)
 
