@@ -75,6 +75,12 @@ public class WorkOrderController {
         return toResponse(service.reopen(id, request.reason()));
     }
 
+    @PostMapping("/{id}/priority")
+    public WorkOrderResponse changePriority(@PathVariable String id,
+                                            @Valid @RequestBody PriorityChangeRequest request) {
+        return toResponse(service.changePriority(id, request.priority(), request.reason()));
+    }
+
     private WorkOrderResponse toResponse(WorkOrder order) {
         return WorkOrderResponse.from(order, service.isOverdue(order), service.isAtRisk(order));
     }

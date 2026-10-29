@@ -104,6 +104,21 @@ public class WorkOrderService {
         return order;
     }
 
+    public synchronized WorkOrder changePriority(String id, Priority next, String reason) {
+        WorkOrder order = get(id);
+        if (order.status().isClosed()) {
+            throw new InvalidTransitionException("Cannot change the priority of " + id + ": it is "
+                    + order.status().displayName().toLowerCase());
+        }
+        Instant now = clock.instant();
+        if (next == order.priority() && !order.isOverdueAt(now)) {
+            throw new InvalidTransitionException("Cannot change the priority of " + id + ": it is already "
+                    + next.displayName());
+        }
+        order.changePriority(next, now, reason.trim());
+        return order;
+    }
+
     public boolean isOverdue(WorkOrder order) {
         return order.isOverdueAt(clock.instant());
     }
