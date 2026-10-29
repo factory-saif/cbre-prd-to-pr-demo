@@ -48,7 +48,9 @@ released in the same run.
         class and the behavior each test proves.
       - **Depends on**: the keys of stories that must merge first, or `none`.
       - **Non-goals**: what this story leaves to other stories.
-   5. Add `Story` to every story whose **Depends on** is `none`.
+   5. Add `Story` to every story whose **Depends on** is `none`, then hand
+      off each one to `dev` with `action` `build` (see "Handoffs between
+      stages" in `SKILL.md`).
    6. If the parent carries `Experiment`, add `Experiment` to
       exactly one story: the first story released to Dev that changes
       user-visible behavior.
@@ -61,8 +63,24 @@ released in the same run.
 1. List open `Demo` stories (issues with a parent) that have no
    `Story` label.
 2. For each one, read **Depends on** from its plan. Add `Story` when
-   every listed story is in `Done`.
+   every listed story is in `Done`, then hand it off to `dev` with `action`
+   `build`.
 
+### C. Sweep for stalled handoffs
+
+Handoffs are webhook calls, so one can fail. Each Planner run restarts
+anything that stalled. For each open trusted story pull request whose story
+lacks `route:human` and whose head commit was pushed more than 20 minutes ago:
+
+| State of the head commit | Hand off to |
+| --- | --- |
+| No `<!-- code-review sha=<head> -->` comment | `review` |
+| Review `Clean`, no `<!-- qa-report sha=<head> -->` | `qa` |
+| Review `Changes requested` or a QA FAIL, story has `bug`, and no `## Fix Loop #` comment started in the last 30 minutes | `dev` with `action` `fix` |
+
+Also hand off to `dev` with `action` `build` for each `Story` story without
+`Implementation` and without a `story/<KEY>` branch pushed in the last 30
+minutes. Never send more than one handoff per story per run.
 ## Rules
 
 - If the PRD is too vague to plan, comment on the parent with the missing

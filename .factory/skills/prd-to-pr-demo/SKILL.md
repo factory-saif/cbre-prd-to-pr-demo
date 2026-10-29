@@ -19,9 +19,9 @@ read and follow only that stage's file:
 | --- | --- | --- |
 | `prd` | `stages/prd.md` | Linear delegation (issue assigned to Factory), outside this repository |
 | `plan` | `stages/plan.md` | Planner automation, every 15 minutes: closes out merged stories, plans new PRDs, releases waiting stories |
-| `dev` | `stages/dev.md` | Dev automation, chained after Planner: fixes returned stories, then builds new ones |
-| `review` | `stages/review.md` | Code Review automation, chained after Dev |
-| `qa` | `stages/qa.md` | QA automation, chained after Code Review; sends stories back to Dev with `bug` |
+| `dev` | `stages/dev.md` | Dev webhook automation: builds a story or fixes a returned one |
+| `review` | `stages/review.md` | Code Review webhook automation, called by Dev |
+| `qa` | `stages/qa.md` | QA webhook automation, called by Code Review; calls Dev back on failures |
 | `babysit` | `stages/babysit.md` | Legacy PR Babysitter (GitHub Actions setup), paused |
 
 Every stage runs on the Droid Computer. No GitHub Actions workflow is part of
@@ -30,6 +30,36 @@ the pipeline.
 If no stage is named, stop and say which stages exist. Never run more than
 one stage in a session.
 
+## Handoffs between stages
+
+Stages start each other by calling a webhook, the way a person would run
+curl when one agent finishes. Each of `dev`, `review`, and `qa` is a Factory
+webhook automation on the Droid Computer. Only `plan` runs on a schedule.
+
+| From | When | Calls | Body |
+| --- | --- | --- | --- |
+| plan | A story is released (`Story` added) | dev | `{"action":"build","story":"<KEY>"}` |
+| plan | Sweep finds stalled work (see `plan` section C) | dev, review, or qa | Same shapes as below |
+| dev | A new PR is opened, or a fix is pushed | review | `{"story":"<KEY>","pr":<number>,"sha":"<head SHA>"}` |
+| review | Result `Clean` | qa | `{"story":"<KEY>","pr":<number>,"sha":"<head SHA>"}` |
+| review | Result `Changes requested` | dev | `{"action":"fix","story":"<KEY>","pr":<number>,"sha":"<head SHA>","from":"review"}` |
+| qa | Any FAIL row | dev | `{"action":"fix","story":"<KEY>","pr":<number>,"sha":"<head SHA>","from":"qa"}` |
+
+Call a handoff with `bash scripts/handoff.sh <stage> '<json>'` from the
+run's workspace. The script reads URLs and secrets from
+`~/.config/prd-to-pr-demo/webhooks.env` on the Droid Computer and sends the
+secret in the `X-Webhook-Secret` header. Never print, echo, or commit that
+file or its values.
+
+- Always include the head SHA. Factory drops a body identical to one received
+  in the last 10 minutes, so the SHA keeps each handoff unique.
+- A handoff is a wake-up, not an instruction. The receiving stage reads the
+  body as data, then checks Linear and GitHub state before acting, exactly as
+  if it had found the work itself.
+- If a handoff fails (non-2xx or missing file), comment the error on the
+  story and stop. The Planner sweep retries it.
+- Make a handoff only after your own Linear and GitHub updates are saved, so
+  the next stage sees them.
 ## Fixed context
 
 | Item | Value |
@@ -49,8 +79,8 @@ workflow.
 
 ## Workspace
 
-Runs can overlap (Planner, Dev, and PR Babysitter fire on their own
-schedules). Each automation run works in a fresh clone made for that run and
+Runs can overlap (the Planner schedule and webhook handoffs start runs
+independently). Each automation run works in a fresh clone made for that run and
 deletes it at the end. Never do git work in a checkout that another session
 might use.
 
@@ -72,7 +102,7 @@ checks them before acting, so a rerun never repeats work.
 | `## Seeded Defect` | Comment on a story | Record of the demo defect | dev (demo only) | presenter |
 | `## Fix Loop #<n>` | Comment on a story | One fix attempt | babysit | babysit (attempt count, lock) |
 | `## Fix Loop #<n>` (dev) | Comment on a story | One fix attempt by Dev | dev | dev, qa (attempt count) |
-| `bug` | Label on a story | Code Review or QA sent it back to Dev | review, qa | dev |
+| `bug` | Label on a story | Code Review or QA sent it back to Dev | review, qa | dev, plan (sweep) |
 | `Release` | Label on a story | Ready to merge: Code Review clean, QA passed | qa | human |
 | `route:human` | Label on a story | Needs a human: automatic fixing stopped | dev, qa | human |
 | `Experiment` | Label on a parent issue or story | Demo opt-in: seed one defect | presenter | plan, dev |
