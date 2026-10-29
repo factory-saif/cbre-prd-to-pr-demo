@@ -498,6 +498,23 @@ class WorkOrderServiceTest {
         }
     }
 
+    @Test
+    void changingPriorityToTheSamePriorityIsRejectedEvenWhenOverdue() {
+        WorkOrder overdue = service.createAt(
+                request("HVAC not cooling", Priority.URGENT, Category.HVAC), START.minus(Duration.ofHours(5)));
+        assertThat(service.isOverdue(overdue)).isTrue();
+        Instant dueAt = overdue.dueAt();
+        Instant updatedAt = overdue.updatedAt();
+        int activitySize = overdue.activity().size();
+
+        assertThatThrownBy(() -> service.changePriority(overdue.id(), Priority.URGENT, "still urgent"))
+                .isInstanceOf(InvalidTransitionException.class);
+        assertThat(overdue.priority()).isEqualTo(Priority.URGENT);
+        assertThat(overdue.dueAt()).isEqualTo(dueAt);
+        assertThat(overdue.updatedAt()).isEqualTo(updatedAt);
+        assertThat(overdue.activity()).hasSize(activitySize);
+    }
+
     private WorkOrder completedOrder(Priority priority) {
         WorkOrder order = service.create(request("Sink leaking", priority, Category.PLUMBING));
         service.assign(order.id(), "Jordan Lee");

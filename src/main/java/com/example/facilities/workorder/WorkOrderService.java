@@ -111,7 +111,7 @@ public class WorkOrderService {
                     + order.status().displayName().toLowerCase());
         }
         Instant now = clock.instant();
-        if (next == order.priority() && !order.isOverdueAt(now)) {
+        if (next == order.priority()) {
             throw new InvalidTransitionException("Cannot change the priority of " + id + ": it is already "
                     + next.displayName());
         }

@@ -230,6 +230,25 @@ class WorkOrderPriorityApiTest {
         }
     }
 
+    @Test
+    void samePriorityOnAnOverdueOrderIsRejected() throws Exception {
+        String id = create("URGENT");
+        clock.advance(Duration.ofHours(5));
+        mvc.perform(get("/api/work-orders/{id}", id)).andExpect(jsonPath("$.overdue").value(true));
+        int before = activity(id).size();
+
+        mvc.perform(changePriority(id, "URGENT", "Still urgent"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.title").value("Invalid status change"));
+
+        mvc.perform(get("/api/work-orders/{id}", id))
+                .andExpect(jsonPath("$.priority").value("URGENT"))
+                .andExpect(jsonPath("$.dueAt").value("2026-03-02T13:00:00Z"))
+                .andExpect(jsonPath("$.updatedAt").value("2026-03-02T09:00:00Z"))
+                .andExpect(jsonPath("$.overdue").value(true));
+        assertThat(activity(id)).hasSize(before);
+    }
+
     private String createAndStart(String priority) throws Exception {
         String id = create(priority);
         mvc.perform(assign(id)).andExpect(status().isOk());
