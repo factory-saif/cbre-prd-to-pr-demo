@@ -42,7 +42,9 @@ needs a reason, returns the order to **In progress** with the same technician,
 clears `completedAt`, and restarts the response target from the reopen time,
 so overdue and at-risk use the new window. Work-order responses include
 `reopened`, `reopenCount`, and `reopenedAt`. Cancelled orders cannot be
-reopened.
+reopened. In the web UI, an eligible completed order shows a **Reopen** action
+that asks for a reason, and any order reopened at least once carries a
+**Reopened** badge in the list.
 
 ## API
 
@@ -66,7 +68,7 @@ reopen the workflow does not allow.
 Requirements: Java 21 and Maven 3.8+.
 
 ```bash
-mvn --batch-mode test          # 54 unit and API tests
+mvn --batch-mode test          # 57 unit and API tests
 mvn spring-boot:run            # http://localhost:8080
 ```
 

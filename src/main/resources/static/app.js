@@ -2,6 +2,7 @@ const STATUSES = ['OPEN', 'ASSIGNED', 'IN_PROGRESS', 'ON_HOLD', 'COMPLETED', 'CA
 const PRIORITIES = ['URGENT', 'HIGH', 'MEDIUM', 'LOW'];
 const CATEGORIES = ['HVAC', 'ELECTRICAL', 'PLUMBING', 'CLEANING', 'SECURITY', 'GENERAL'];
 const CLOSED = new Set(['COMPLETED', 'CANCELLED']);
+const REOPEN_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
 
 const $ = (id) => document.getElementById(id);
 const state = { selectedId: null };
@@ -34,6 +35,12 @@ function dueText(order) {
   if (CLOSED.has(order.status)) return label(order.status);
   const diff = new Date(order.dueAt).getTime() - Date.now();
   return order.overdue ? `Overdue by ${formatDuration(diff)}` : `Due in ${formatDuration(diff)}`;
+}
+
+function canReopen(order) {
+  return order.status === 'COMPLETED'
+    && Boolean(order.completedAt)
+    && Date.now() - new Date(order.completedAt).getTime() <= REOPEN_WINDOW_MS;
 }
 
 function formatTime(iso) {
@@ -102,7 +109,7 @@ function renderRows(orders) {
       el('td', { class: 'mono' }, order.id),
       cellWithSub(order.title, `${order.location} · ${label(order.category)}`),
       badgeCell(label(order.priority), `priority-${order.priority.toLowerCase()}`),
-      badgeCell(label(order.status), `status-${order.status.toLowerCase()}`),
+      statusCell(order),
       el('td', {}, order.assignee || 'Unassigned'),
       dueCell(order),
     );
@@ -119,6 +126,14 @@ function dueCell(order) {
   const cell = el('td', { class: classes.join(' ') }, dueText(order));
   if (order.atRisk) {
     cell.append(' ', el('span', { class: 'badge at-risk-badge', 'data-testid': `at-risk-badge-${order.id}` }, 'At risk'));
+  }
+  return cell;
+}
+
+function statusCell(order) {
+  const cell = badgeCell(label(order.status), `status-${order.status.toLowerCase()}`);
+  if (order.reopenCount > 0) {
+    cell.append(' ', el('span', { class: 'badge reopened-badge', 'data-testid': `reopened-badge-${order.id}` }, 'Reopened'));
   }
   return cell;
 }
@@ -169,6 +184,9 @@ function renderDetail(order) {
   $('assign-form').hidden = closed;
   $('assignee-input').value = order.assignee || '';
 
+  $('reopen-form').hidden = !canReopen(order);
+  $('reopen-reason').value = '';
+
   const buttons = $('status-buttons');
   buttons.replaceChildren();
   order.nextStatuses
@@ -218,6 +236,25 @@ $('assign-form').addEventListener('submit', async (event) => {
     await refreshSelected(order);
   } catch (error) {
     const fieldMessage = error.fieldErrors.assignee ? `Assignee ${error.fieldErrors.assignee}` : '';
+    showError($('detail-error'), fieldMessage || error.message);
+  }
+});
+
+$('reopen-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  const reason = $('reopen-reason').value.trim();
+  if (!reason) {
+    showError($('detail-error'), 'Enter a reason to reopen this work order');
+    return;
+  }
+  try {
+    const order = await api(`/api/work-orders/${encodeURIComponent(state.selectedId)}/reopen`, {
+      method: 'POST',
+      body: JSON.stringify({ reason }),
+    });
+    await refreshSelected(order);
+  } catch (error) {
+    const fieldMessage = error.fieldErrors.reason ? `Reason ${error.fieldErrors.reason}` : '';
     showError($('detail-error'), fieldMessage || error.message);
   }
 });

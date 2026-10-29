@@ -57,17 +57,25 @@ public class WorkOrderService {
         return repository.findById(id).orElseThrow(() -> new WorkOrderNotFoundException(id));
     }
 
-    public synchronized WorkOrder assign(String id, String assignee) {
+    public WorkOrder assign(String id, String assignee) {
+        return assignAt(id, assignee, clock.instant());
+    }
+
+    synchronized WorkOrder assignAt(String id, String assignee, Instant at) {
         WorkOrder order = get(id);
         if (order.status().isClosed()) {
             throw new InvalidTransitionException(
                     id + " is " + order.status().displayName().toLowerCase() + " and cannot be reassigned");
         }
-        order.assignTo(assignee.trim(), clock.instant());
+        order.assignTo(assignee.trim(), at);
         return order;
     }
 
-    public synchronized WorkOrder changeStatus(String id, Status next, String note) {
+    public WorkOrder changeStatus(String id, Status next, String note) {
+        return changeStatusAt(id, next, note, clock.instant());
+    }
+
+    synchronized WorkOrder changeStatusAt(String id, Status next, String note, Instant at) {
         WorkOrder order = get(id);
         if (next == Status.ASSIGNED) {
             throw new InvalidTransitionException("Use the assign action to assign " + id);
@@ -76,7 +84,7 @@ public class WorkOrderService {
             throw new InvalidTransitionException("Cannot move " + id + " from "
                     + order.status().displayName() + " to " + next.displayName());
         }
-        order.moveTo(next, clock.instant(), trimToNull(note));
+        order.moveTo(next, at, trimToNull(note));
         return order;
     }
 

@@ -98,6 +98,24 @@ class WorkOrderServiceTest {
     }
 
     @Test
+    void changeStatusAtRecordsCompletionAndActivityAtTheGivenTime() {
+        WorkOrder order = service.create(request("Clear slow drain", Priority.MEDIUM, Category.PLUMBING));
+        Instant startedAt = START.plus(Duration.ofHours(1));
+        Instant completedAt = START.plus(Duration.ofHours(5));
+        service.assignAt(order.id(), "Priya Shah", startedAt);
+        service.changeStatusAt(order.id(), Status.IN_PROGRESS, null, startedAt);
+
+        service.changeStatusAt(order.id(), Status.COMPLETED, "Drain cleared", completedAt);
+
+        assertThat(order.status()).isEqualTo(Status.COMPLETED);
+        assertThat(order.completedAt()).isEqualTo(completedAt);
+        assertThat(order.activity()).last().satisfies(entry -> {
+            assertThat(entry.at()).isEqualTo(completedAt);
+            assertThat(entry.message()).isEqualTo("Status changed from In progress to Completed: Drain cleared");
+        });
+    }
+
+    @Test
     void statusChangesMustFollowTheWorkflow() {
         WorkOrder order = service.create(request("Replace filter", Priority.MEDIUM, Category.HVAC));
 
