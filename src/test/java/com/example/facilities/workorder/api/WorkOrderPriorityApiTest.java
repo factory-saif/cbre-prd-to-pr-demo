@@ -200,6 +200,23 @@ class WorkOrderPriorityApiTest {
     }
 
     @Test
+    void priorityChangeRejectsNumericPriority() throws Exception {
+        String id = create("MEDIUM");
+        int before = activity(id).size();
+
+        for (String priority : List.of("0", "3", "\"0\"")) {
+            mvc.perform(post("/api/work-orders/{id}/priority", id).contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"priority\":" + priority + ",\"reason\":\"" + REASON + "\"}"))
+                    .andExpect(status().isBadRequest());
+        }
+
+        mvc.perform(get("/api/work-orders/{id}", id))
+                .andExpect(jsonPath("$.priority").value("MEDIUM"))
+                .andExpect(jsonPath("$.dueAt").value("2026-03-05T09:00:00Z"));
+        assertThat(activity(id)).hasSize(before);
+    }
+
+    @Test
     void priorityChangeOfAnUnknownIdReturns404() throws Exception {
         mvc.perform(changePriority("WO-9999", "URGENT", REASON))
                 .andExpect(status().isNotFound())
