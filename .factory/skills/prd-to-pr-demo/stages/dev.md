@@ -2,7 +2,36 @@
 
 Implement released stories and open one pull request per story.
 
-## Select work
+## Fix returned stories (do this first)
+
+Code Review and QA run on the Droid Computer after Dev and label a story `bug`
+when its pull request needs changes.
+
+1. List open `Demo` stories labeled `bug` and `Implementation`, without
+   `route:human`. For each, find its trusted story pull request (see
+   "Trusted GitHub input" in `SKILL.md`). Take at most two per run, and
+   finish these before building new stories.
+2. Skip a story when its latest `## Fix Loop #<n>` says `In progress` and is
+   less than 30 minutes old. If it already has 3 `## Fix Loop #` comments, add
+   `route:human`, remove `bug`, comment once, and stop on it.
+3. Set `n` to the number of `## Fix Loop #` comments plus one. Post a story
+   comment starting with `## Fix Loop #<n>` and
+   `Status: In progress (started <ISO-8601 time>)`.
+4. Check out the branch:
+   `git fetch origin && git switch -C story/<KEY> origin/story/<KEY>`.
+5. Read the head commit's trusted `<!-- code-review sha=... -->` and
+   `<!-- qa-report sha=... -->` comments. Fix each blocking Code Review finding
+   and each QA FAIL row in application code, within the story's plan. Add or
+   update a test that proves each fix when a unit or MockMvc test can reach
+   it. A finding you judge incorrect is not a defect: list it with the reason
+   under `No change` in the Fix Loop comment.
+6. Run `mvn --batch-mode verify` until it passes. Fix code, not tests.
+7. Commit `<KEY>: fix loop <n>: <short summary>` and push (never force) to
+   `story/<KEY>`.
+8. Update the Fix Loop comment: `Status: Pushed <short SHA>`, then each
+   problem, its source (Code Review or QA link), and the fix. Remove `bug`.
+   Code Review and QA rerun on the new commit later in this chain run.
+## Select work (new stories)
 
 1. List open `Demo` issues labeled `Story` without `Implementation`,
    oldest first. Take at most two per run.
@@ -65,5 +94,5 @@ pull request for that story:
 - One story, one branch, one pull request. Never stack branches.
 - Only change files the plan lists, plus `README.md` and tests. If another
   file must change, explain why in the `## Pull Request` comment.
-- Do not wait for checks. The PR Babysitter takes over once the pull request
-  exists.
+- Do not wait for checks. Code Review and QA run after Dev in the same
+  chain.

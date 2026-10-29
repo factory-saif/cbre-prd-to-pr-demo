@@ -1,10 +1,10 @@
 project: Facilities Desk
 platform: github
 imagemagick: true
-video_evidence: true # record interactive flows through droid-control
+video_evidence: false # record interactive flows through droid-control
 droid_control:
   plugin: droid-control@factory-plugins
-  compose: true # single runtime toggle for optional edited MP4 output
+  compose: false # single runtime toggle for optional edited MP4 output
 
 environments:
   local:
