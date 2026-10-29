@@ -403,6 +403,118 @@ class WorkOrderServiceTest {
         assertThat(order.reopenedAt()).isEqualTo(START.plus(Duration.ofHours(1)).plus(Duration.ofDays(8)));
     }
 
+    @Test
+    void changingPriorityRecalculatesDueTimeFromTheWindowStart() {
+        WorkOrder order = service.create(request("Leak near server racks", Priority.MEDIUM, Category.PLUMBING));
+        clock.advance(Duration.ofHours(2));
+
+        service.changePriority(order.id(), Priority.URGENT, "water near the server racks");
+
+        assertThat(order.priority()).isEqualTo(Priority.URGENT);
+        assertThat(order.dueAt()).isEqualTo(START.plus(Duration.ofHours(4)));
+        assertThat(service.isOverdue(order)).isFalse();
+        assertThat(service.isAtRisk(order)).isFalse();
+
+        clock.advance(Duration.ofHours(1));
+        assertThat(service.isAtRisk(order)).isTrue();
+        assertThat(service.isOverdue(order)).isFalse();
+    }
+
+    @Test
+    void raisingPriorityPastTheNewTargetMakesTheOrderOverdueImmediately() {
+        WorkOrder order = service.create(request("Leak near server racks", Priority.MEDIUM, Category.PLUMBING));
+        clock.advance(Duration.ofHours(5));
+
+        service.changePriority(order.id(), Priority.URGENT, "water near the server racks");
+
+        assertThat(order.dueAt()).isEqualTo(START.plus(Duration.ofHours(4)));
+        assertThat(service.isOverdue(order)).isTrue();
+        assertThat(service.isAtRisk(order)).isFalse();
+    }
+
+    @Test
+    void loweringPriorityCanClearOverdue() {
+        WorkOrder order = service.create(request("Scuff on lobby wall", Priority.URGENT, Category.GENERAL));
+        clock.advance(Duration.ofHours(5));
+        assertThat(service.isOverdue(order)).isTrue();
+
+        service.changePriority(order.id(), Priority.LOW, "cosmetic only");
+
+        assertThat(order.dueAt()).isEqualTo(START.plus(Duration.ofDays(7)));
+        assertThat(service.isOverdue(order)).isFalse();
+        assertThat(service.isAtRisk(order)).isFalse();
+    }
+
+    @Test
+    void changingPriorityOfAReopenedOrderUsesTheLatestReopenTime() {
+        WorkOrder order = completedOrder(Priority.HIGH);
+        clock.advance(Duration.ofHours(2));
+        service.reopen(order.id(), "Leak is dripping again");
+        clock.advance(Duration.ofHours(1));
+
+        service.changePriority(order.id(), Priority.URGENT, "water near the server racks");
+
+        assertThat(order.reopenedAt()).isEqualTo(START.plus(Duration.ofHours(3)));
+        assertThat(order.dueAt()).isEqualTo(order.reopenedAt().plus(Duration.ofHours(4)));
+        assertThat(order.createdAt()).isEqualTo(START);
+    }
+
+    @Test
+    void changingPriorityAddsAnActivityEntryAndKeepsStatusAndAssignee() {
+        WorkOrder order = service.create(request("Leak near server racks", Priority.MEDIUM, Category.PLUMBING));
+        service.assign(order.id(), "Priya Shah");
+        List<ActivityEntry> before = order.activity();
+        clock.advance(Duration.ofHours(2));
+
+        service.changePriority(order.id(), Priority.URGENT, "  water near the server racks  ");
+
+        assertThat(order.status()).isEqualTo(Status.ASSIGNED);
+        assertThat(order.assignee()).isEqualTo("Priya Shah");
+        assertThat(order.updatedAt()).isEqualTo(START.plus(Duration.ofHours(2)));
+        assertThat(order.activity()).hasSize(before.size() + 1).startsWith(before.toArray(ActivityEntry[]::new));
+        assertThat(order.activity()).last().satisfies(entry -> {
+            assertThat(entry.at()).isEqualTo(START.plus(Duration.ofHours(2)));
+            assertThat(entry.message()).isEqualTo("Priority changed from Medium to Urgent: water near the server racks");
+        });
+    }
+
+    @Test
+    void changingPriorityIsRejectedForClosedOrdersAndTheSamePriority() {
+        WorkOrder completed = completedOrder(Priority.MEDIUM);
+        WorkOrder cancelled = service.create(request("Duplicate request", Priority.MEDIUM, Category.GENERAL));
+        service.changeStatus(cancelled.id(), Status.CANCELLED, null);
+        WorkOrder active = service.create(request("Leak near server racks", Priority.MEDIUM, Category.PLUMBING));
+
+        for (WorkOrder order : List.of(completed, cancelled, active)) {
+            Instant dueAt = order.dueAt();
+            int activitySize = order.activity().size();
+            Priority next = order == active ? Priority.MEDIUM : Priority.URGENT;
+
+            assertThatThrownBy(() -> service.changePriority(order.id(), next, "water near the server racks"))
+                    .isInstanceOf(InvalidTransitionException.class);
+            assertThat(order.priority()).isEqualTo(Priority.MEDIUM);
+            assertThat(order.dueAt()).isEqualTo(dueAt);
+            assertThat(order.activity()).hasSize(activitySize);
+        }
+    }
+
+    @Test
+    void changingPriorityToTheSamePriorityIsRejectedEvenWhenOverdue() {
+        WorkOrder overdue = service.createAt(
+                request("HVAC not cooling", Priority.URGENT, Category.HVAC), START.minus(Duration.ofHours(5)));
+        assertThat(service.isOverdue(overdue)).isTrue();
+        Instant dueAt = overdue.dueAt();
+        Instant updatedAt = overdue.updatedAt();
+        int activitySize = overdue.activity().size();
+
+        assertThatThrownBy(() -> service.changePriority(overdue.id(), Priority.URGENT, "still urgent"))
+                .isInstanceOf(InvalidTransitionException.class);
+        assertThat(overdue.priority()).isEqualTo(Priority.URGENT);
+        assertThat(overdue.dueAt()).isEqualTo(dueAt);
+        assertThat(overdue.updatedAt()).isEqualTo(updatedAt);
+        assertThat(overdue.activity()).hasSize(activitySize);
+    }
+
     private WorkOrder completedOrder(Priority priority) {
         WorkOrder order = service.create(request("Sink leaking", priority, Category.PLUMBING));
         service.assign(order.id(), "Jordan Lee");

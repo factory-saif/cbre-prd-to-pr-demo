@@ -11,7 +11,7 @@ public class WorkOrder {
     private final String description;
     private final String location;
     private final Category category;
-    private final Priority priority;
+    private Priority priority;
     private final String requester;
     private final Instant createdAt;
     private final List<ActivityEntry> activity = new ArrayList<>();
@@ -75,6 +75,13 @@ public class WorkOrder {
         dueAt = at.plus(priority.responseTarget());
         reopenCount++;
         touch(at, message);
+    }
+
+    void changePriority(Priority next, Instant at, String reason) {
+        Priority old = priority;
+        priority = next;
+        dueAt = windowStart.plus(next.responseTarget());
+        touch(at, "Priority changed from " + old.displayName() + " to " + next.displayName() + ": " + reason);
     }
 
     public boolean isOverdueAt(Instant now) {

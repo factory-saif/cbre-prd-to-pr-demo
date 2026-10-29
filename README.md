@@ -46,6 +46,16 @@ reopened. In the web UI, an eligible completed order shows a **Reopen** action
 that asks for a reason, and any order reopened at least once carries a
 **Reopened** badge in the list.
 
+An active work order's priority can be changed through the priority action.
+The change needs a reason and is rejected with `409` for completed or
+cancelled orders and when the new priority equals the current one. The new due
+time is the start of the current response window (`createdAt`, or the latest
+`reopenedAt` for a reopened order) plus the new priority's target, and the
+at-risk threshold uses the new target too, so an order can become overdue
+right away or stop being overdue. Status, technician, and earlier history are
+unchanged, and the activity history records `Priority changed from <Old> to
+<New>: <reason>`.
+
 ## API
 
 | Method | Path | Purpose |
@@ -56,19 +66,20 @@ that asks for a reason, and any order reopened at least once carries a
 | `POST` | `/api/work-orders/{id}/assign` | Assign or reassign a technician (`assignee`) |
 | `POST` | `/api/work-orders/{id}/status` | Change status (`status`, optional `note`) |
 | `POST` | `/api/work-orders/{id}/reopen` | Reopen a completed work order within 7 days (`reason`, 1–500 characters) |
+| `POST` | `/api/work-orders/{id}/priority` | Change an active work order's priority (`priority`, `reason`, 1–500 characters) |
 | `GET` | `/api/work-orders/summary` | Active, overdue, at-risk, urgent, and per-status counts |
 | `GET` | `/actuator/health` | Health check |
 
 Errors use RFC 9457 problem details: `400` for validation (with an `errors`
-map per field), `404` for an unknown ID, and `409` for a status change or
-reopen the workflow does not allow.
+map per field), `404` for an unknown ID, and `409` for a status change,
+reopen, or priority change the workflow does not allow.
 
 ## Run locally
 
 Requirements: Java 21 and Maven 3.8+.
 
 ```bash
-mvn --batch-mode test          # 57 unit and API tests
+mvn --batch-mode test          # 77 unit and API tests
 mvn spring-boot:run            # http://localhost:8080
 ```
 
