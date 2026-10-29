@@ -73,6 +73,14 @@
           <div id="status-buttons" class="row wrap" data-testid="status-buttons"></div>
         </div>
 
+        <form id="reopen-form" class="inline-form" data-testid="reopen-form" hidden>
+          <label for="reopen-reason">Reason</label>
+          <div class="row">
+            <input id="reopen-reason" name="reason" maxlength="500" placeholder="Why is this work order coming back?" data-testid="reopen-reason">
+            <button type="submit" class="primary" data-testid="reopen-button">Reopen</button>
+          </div>
+        </form>
+
         <p id="detail-error" class="errors" role="alert" data-testid="detail-error" hidden></p>
 
         <h3>Activity</h3>

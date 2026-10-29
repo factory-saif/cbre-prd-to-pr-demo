@@ -55,6 +55,12 @@ class DemoDataLoader implements ApplicationRunner {
         service.assign(tile.id(), "Alex Kim");
         service.changeStatus(tile.id(), Status.IN_PROGRESS, null);
         service.changeStatus(tile.id(), Status.COMPLETED, "Tile replaced");
+
+        WorkOrder drain = seed(now.minus(Duration.ofDays(12)), "Clear slow drain in the staff kitchen", null,
+                "Tower B · Floor 5", Category.PLUMBING, Priority.MEDIUM, "Riley Patel");
+        service.assignAt(drain.id(), "Priya Shah", now.minus(Duration.ofDays(11)));
+        service.changeStatusAt(drain.id(), Status.IN_PROGRESS, null, now.minus(Duration.ofDays(11)));
+        service.changeStatusAt(drain.id(), Status.COMPLETED, "Drain cleared", now.minus(Duration.ofDays(10)));
     }
 
     private WorkOrder seed(Instant createdAt, String title, String description, String location,
