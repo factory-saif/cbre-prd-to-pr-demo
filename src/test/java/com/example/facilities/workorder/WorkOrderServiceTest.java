@@ -515,6 +515,124 @@ class WorkOrderServiceTest {
         assertThat(overdue.activity()).hasSize(activitySize);
     }
 
+    @Test
+    void addingANoteAppendsAnActivityEntryAndKeepsStatusAndAssignee() {
+        WorkOrder order = inProgressOrder(Priority.MEDIUM);
+        List<ActivityEntry> before = order.activity();
+        clock.advance(Duration.ofHours(2));
+
+        service.addNote(order.id(), "  Parts ordered, back Thursday  ", "  Sam Rivera  ");
+
+        Instant notedAt = START.plus(Duration.ofHours(2));
+        assertThat(order.status()).isEqualTo(Status.IN_PROGRESS);
+        assertThat(order.assignee()).isEqualTo("Priya Shah");
+        assertThat(order.noteCount()).isEqualTo(1);
+        assertThat(order.updatedAt()).isEqualTo(notedAt);
+        assertThat(order.activity()).hasSize(before.size() + 1).startsWith(before.toArray(ActivityEntry[]::new));
+        assertThat(order.activity()).last().satisfies(entry -> {
+            assertThat(entry.at()).isEqualTo(notedAt);
+            assertThat(entry.message()).isEqualTo("Note from Sam Rivera: Parts ordered, back Thursday");
+        });
+    }
+
+    @Test
+    void addingANoteLeavesPriorityAndDueTimeUnchanged() {
+        WorkOrder order = inProgressOrder(Priority.URGENT);
+        clock.advance(Duration.ofHours(3).plusMinutes(30));
+        Instant dueAt = order.dueAt();
+        assertThat(service.isAtRisk(order)).isTrue();
+
+        service.addNote(order.id(), "Parts ordered, back Thursday", "Sam Rivera");
+
+        assertThat(order.priority()).isEqualTo(Priority.URGENT);
+        assertThat(order.dueAt()).isEqualTo(dueAt);
+        assertThat(service.isAtRisk(order)).isTrue();
+        assertThat(service.isOverdue(order)).isFalse();
+
+        clock.advance(Duration.ofHours(1));
+        service.addNote(order.id(), "Still waiting on parts", "Sam Rivera");
+
+        assertThat(order.dueAt()).isEqualTo(dueAt);
+        assertThat(service.isOverdue(order)).isTrue();
+        assertThat(service.isAtRisk(order)).isFalse();
+    }
+
+    @Test
+    void notesCanBeAddedInEveryActiveStatus() {
+        WorkOrder open = service.create(request("Paint touch-up", Priority.LOW, Category.GENERAL));
+        WorkOrder assigned = service.create(request("No hot water", Priority.HIGH, Category.PLUMBING));
+        service.assign(assigned.id(), "Priya Shah");
+        WorkOrder inProgress = inProgressOrder(Priority.MEDIUM);
+        WorkOrder onHold = inProgressOrder(Priority.MEDIUM);
+        service.changeStatus(onHold.id(), Status.ON_HOLD, "Waiting for parts");
+
+        for (WorkOrder order : List.of(open, assigned, inProgress, onHold)) {
+            Status status = order.status();
+
+            service.addNote(order.id(), "Tenant not home, rescheduled", "Sam Rivera");
+
+            assertThat(order.status()).isEqualTo(status);
+            assertThat(order.noteCount()).isEqualTo(1);
+            assertThat(order.activity()).last().extracting(ActivityEntry::message)
+                    .isEqualTo("Note from Sam Rivera: Tenant not home, rescheduled");
+        }
+    }
+
+    @Test
+    void addingANoteToAClosedOrderIsRejected() {
+        WorkOrder completed = completedOrder(Priority.MEDIUM);
+        WorkOrder cancelled = service.create(request("Duplicate request", Priority.MEDIUM, Category.GENERAL));
+        service.changeStatus(cancelled.id(), Status.CANCELLED, null);
+
+        for (WorkOrder order : List.of(completed, cancelled)) {
+            int activitySize = order.activity().size();
+            Instant updatedAt = order.updatedAt();
+
+            assertThatThrownBy(() -> service.addNote(order.id(), "Parts ordered, back Thursday", "Sam Rivera"))
+                    .isInstanceOf(InvalidTransitionException.class)
+                    .hasMessageStartingWith("Cannot add a note to " + order.id());
+            assertThat(order.activity()).hasSize(activitySize);
+            assertThat(order.noteCount()).isZero();
+            assertThat(order.updatedAt()).isEqualTo(updatedAt);
+        }
+    }
+
+    @Test
+    void addingANoteToAnUnknownOrderIsNotFound() {
+        assertThatThrownBy(() -> service.addNote("WO-9999", "Parts ordered, back Thursday", "Sam Rivera"))
+                .isInstanceOf(WorkOrderNotFoundException.class);
+    }
+
+    @Test
+    void noteCountCountsOnlyNotes() {
+        WorkOrder order = inProgressOrder(Priority.MEDIUM);
+        service.changeStatus(order.id(), Status.ON_HOLD, "Note from Sam Rivera: waiting for parts");
+        service.changeStatus(order.id(), Status.IN_PROGRESS, null);
+        service.assign(order.id(), "Jordan Lee");
+        service.changePriority(order.id(), Priority.URGENT, "water near the server racks");
+
+        assertThat(order.noteCount()).isZero();
+
+        service.addNote(order.id(), "Parts ordered, back Thursday", "Sam Rivera");
+        clock.advance(Duration.ofHours(1));
+        service.changeStatus(order.id(), Status.COMPLETED, null);
+        clock.advance(Duration.ofHours(1));
+        service.reopen(order.id(), "Leak is dripping again");
+
+        assertThat(order.noteCount()).isEqualTo(1);
+
+        service.addNote(order.id(), "Second visit booked", "Sam Rivera");
+
+        assertThat(order.noteCount()).isEqualTo(2);
+    }
+
+    private WorkOrder inProgressOrder(Priority priority) {
+        WorkOrder order = service.create(request("Sink leaking", priority, Category.PLUMBING));
+        service.assign(order.id(), "Priya Shah");
+        service.changeStatus(order.id(), Status.IN_PROGRESS, null);
+        return order;
+    }
+
     private WorkOrder completedOrder(Priority priority) {
         WorkOrder order = service.create(request("Sink leaking", priority, Category.PLUMBING));
         service.assign(order.id(), "Jordan Lee");

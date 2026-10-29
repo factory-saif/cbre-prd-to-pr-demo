@@ -24,6 +24,7 @@ public class WorkOrder {
     private Instant windowStart;
     private int reopenCount;
     private Instant reopenedAt;
+    private int noteCount;
 
     WorkOrder(String id, String title, String description, String location, Category category,
               Priority priority, String requester, Instant createdAt) {
@@ -82,6 +83,11 @@ public class WorkOrder {
         priority = next;
         dueAt = windowStart.plus(next.responseTarget());
         touch(at, "Priority changed from " + old.displayName() + " to " + next.displayName() + ": " + reason);
+    }
+
+    void addNote(String author, String text, Instant at) {
+        noteCount++;
+        touch(at, "Note from " + author + ": " + text);
     }
 
     public boolean isOverdueAt(Instant now) {
@@ -156,6 +162,10 @@ public class WorkOrder {
 
     public Instant reopenedAt() {
         return reopenedAt;
+    }
+
+    public int noteCount() {
+        return noteCount;
     }
 
     public boolean isReopened() {
