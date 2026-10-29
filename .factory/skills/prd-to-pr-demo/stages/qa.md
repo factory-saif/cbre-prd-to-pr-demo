@@ -22,8 +22,8 @@ after Code Review.
    and invoke the `qa` skill on the checked-out branch with diff base
    `origin/main` and the prebuilt `target/facilities-desk.jar`. You run
    unattended: do not ask questions. Write `qa-results/report.md`.
-4. Post or update one pull request comment (find an existing trusted comment
-   starting with `<!-- qa-report` and PATCH it; otherwise create it). The body
+4. Post a new pull request comment for this commit; never edit an earlier QA
+   report, so the PR keeps every result. The body
    is `<!-- qa-report sha=<headRefOid> -->` on the first line, then the
    report. Evidence is text snapshots; name screenshot files, do not embed them.
 5. Stop the app and delete `qa-results/`.

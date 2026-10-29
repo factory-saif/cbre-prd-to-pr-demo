@@ -5,6 +5,18 @@ stories to Dev when their dependencies are done.
 
 ## Steps
 
+### 0. Close out merged work (do this first)
+
+1. List `Demo` stories (issues with a parent) that are not `Done` and have a
+   trusted `## Pull Request` comment.
+2. For each one, check its pull request:
+   `gh pr view <url> --repo factory-saif/prd-to-pr-demo --json state,mergedAt`.
+   When it is `MERGED`, move the story to `Done` and remove `bug` and
+   `Release`.
+3. When every story under a parent is `Done`, move the parent to `Done`.
+
+Do this before section B, so stories that depend on a merged story are
+released in the same run.
 ### A. New PRDs
 
 1. List open `Demo` issues that have no parent issue and have a trusted
@@ -55,5 +67,5 @@ stories to Dev when their dependencies are done.
 
 - If the PRD is too vague to plan, comment on the parent with the missing
   decision and do not post `## Stories`.
-- Never edit or delete stories that already exist. Never modify the
-  repository.
+- Never edit or delete stories that already exist, except for the state and
+  label changes in section 0. Never modify the repository.
