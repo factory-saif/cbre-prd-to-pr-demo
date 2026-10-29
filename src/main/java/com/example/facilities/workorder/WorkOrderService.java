@@ -119,6 +119,17 @@ public class WorkOrderService {
         return order;
     }
 
+    public synchronized WorkOrder addNote(String id, String text, String author) {
+        WorkOrder order = get(id);
+        if (order.status().isClosed()) {
+            throw new InvalidTransitionException("Cannot add a note to " + id + ": it is "
+                    + order.status().displayName().toLowerCase());
+        }
+        Instant now = clock.instant();
+        order.addNote(author.trim(), text.trim(), now);
+        return order;
+    }
+
     public boolean isOverdue(WorkOrder order) {
         return order.isOverdueAt(clock.instant());
     }

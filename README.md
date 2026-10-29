@@ -56,30 +56,41 @@ right away or stop being overdue. Status, technician, and earlier history are
 unchanged, and the activity history records `Priority changed from <Old> to
 <New>: <reason>`.
 
+Coordinators can add a note to any active work order through the notes action
+to record an update that does not change its status (for example, "Parts
+ordered, back Thursday"). A note needs the text (1–500 characters) and the
+author's name (1–100 characters). It is recorded in the activity history as
+`Note from <author>: <text>` and advances `updatedAt`, but leaves status,
+technician, priority, and due time unchanged. Completed and cancelled orders
+reject notes with `409`; a reopened order takes notes again. Work-order
+responses include `noteCount`, the number of notes on the order, counted
+separately from other activity entries.
+
 ## API
 
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/api/work-orders` | List work orders. Optional filters: `status`, `priority`, `category`, `overdue`, `atRisk`, `q` (search ID, title, location, people) |
 | `POST` | `/api/work-orders` | Create a work order (`title`, `location`, `category`, `priority`, `requester`, optional `description`) |
-| `GET` | `/api/work-orders/{id}` | Get one work order with its activity history |
+| `GET` | `/api/work-orders/{id}` | Get one work order with its activity history and `noteCount` |
 | `POST` | `/api/work-orders/{id}/assign` | Assign or reassign a technician (`assignee`) |
 | `POST` | `/api/work-orders/{id}/status` | Change status (`status`, optional `note`) |
 | `POST` | `/api/work-orders/{id}/reopen` | Reopen a completed work order within 7 days (`reason`, 1–500 characters) |
 | `POST` | `/api/work-orders/{id}/priority` | Change an active work order's priority (`priority`, `reason`, 1–500 characters) |
+| `POST` | `/api/work-orders/{id}/notes` | Add a note to an active work order (`text`, 1–500 characters; `author`, 1–100 characters) |
 | `GET` | `/api/work-orders/summary` | Active, overdue, at-risk, urgent, and per-status counts |
 | `GET` | `/actuator/health` | Health check |
 
 Errors use RFC 9457 problem details: `400` for validation (with an `errors`
 map per field), `404` for an unknown ID, and `409` for a status change,
-reopen, or priority change the workflow does not allow.
+reopen, priority change, or note the workflow does not allow.
 
 ## Run locally
 
 Requirements: Java 21 and Maven 3.8+.
 
 ```bash
-mvn --batch-mode test          # 77 unit and API tests
+mvn --batch-mode test          # 93 unit and API tests
 mvn spring-boot:run            # http://localhost:8080
 ```
 

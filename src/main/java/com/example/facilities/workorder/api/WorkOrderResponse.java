@@ -27,6 +27,7 @@ public record WorkOrderResponse(
         boolean reopened,
         int reopenCount,
         Instant reopenedAt,
+        int noteCount,
         List<Status> nextStatuses,
         List<ActivityEntry> activity) {
 
@@ -50,6 +51,7 @@ public record WorkOrderResponse(
                 order.isReopened(),
                 order.reopenCount(),
                 order.reopenedAt(),
+                order.status().isClosed() ? 0 : order.noteCount(),
                 order.status().nextStatuses(),
                 order.activity());
     }

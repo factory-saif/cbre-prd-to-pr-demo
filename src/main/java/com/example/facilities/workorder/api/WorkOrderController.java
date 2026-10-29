@@ -81,6 +81,11 @@ public class WorkOrderController {
         return toResponse(service.changePriority(id, request.priority(), request.reason()));
     }
 
+    @PostMapping("/{id}/notes")
+    public WorkOrderResponse addNote(@PathVariable String id, @Valid @RequestBody AddNoteRequest request) {
+        return toResponse(service.addNote(id, request.text(), request.author()));
+    }
+
     private WorkOrderResponse toResponse(WorkOrder order) {
         return WorkOrderResponse.from(order, service.isOverdue(order), service.isAtRisk(order));
     }
