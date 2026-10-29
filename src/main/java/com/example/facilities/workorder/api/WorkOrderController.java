@@ -70,6 +70,11 @@ public class WorkOrderController {
         return toResponse(service.changeStatus(id, request.status(), request.note()));
     }
 
+    @PostMapping("/{id}/reopen")
+    public WorkOrderResponse reopen(@PathVariable String id, @Valid @RequestBody ReopenRequest request) {
+        return toResponse(service.reopen(id, request.reason()));
+    }
+
     private WorkOrderResponse toResponse(WorkOrder order) {
         return WorkOrderResponse.from(order, service.isOverdue(order), service.isAtRisk(order));
     }

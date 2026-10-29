@@ -286,6 +286,64 @@ class WorkOrderServiceTest {
                 .hasMessage("No work order exists with ID WO-9999");
     }
 
+    @Test
+    void reopenClearsCompletionAndRestartsTheResponseTargetFromTheClock() {
+        WorkOrder order = completedOrder(Priority.HIGH);
+        clock.advance(Duration.ofHours(23));
+
+        service.reopen(order.id(), "  Leak is dripping again  ");
+
+        Instant reopenedAt = START.plus(Duration.ofHours(24));
+        assertThat(order.status()).isEqualTo(Status.IN_PROGRESS);
+        assertThat(order.assignee()).isEqualTo("Jordan Lee");
+        assertThat(order.completedAt()).isNull();
+        assertThat(order.reopenedAt()).isEqualTo(reopenedAt);
+        assertThat(order.dueAt()).isEqualTo(reopenedAt.plus(Duration.ofHours(24)));
+        assertThat(order.reopenCount()).isEqualTo(1);
+        assertThat(order.isReopened()).isTrue();
+        assertThat(order.activity()).last().extracting(ActivityEntry::message)
+                .isEqualTo("Status changed from Completed to In progress: Reopened: Leak is dripping again");
+    }
+
+    @Test
+    void reopenedOrderIsAtRiskFromItsNewWindow() {
+        WorkOrder order = completedOrder(Priority.URGENT);
+        clock.advance(Duration.ofHours(3));
+        service.reopen(order.id(), "Still broken");
+
+        assertThat(service.isAtRisk(order)).isFalse();
+
+        clock.advance(Duration.ofHours(2).plusMinutes(59));
+        assertThat(service.isAtRisk(order)).isFalse();
+
+        clock.advance(Duration.ofMinutes(1));
+        assertThat(service.isAtRisk(order)).isTrue();
+        assertThat(service.isOverdue(order)).isFalse();
+    }
+
+    @Test
+    void reopenIsRejectedOutsideTheWindowAndForOrdersThatAreNotCompleted() {
+        WorkOrder completed = completedOrder(Priority.HIGH);
+        WorkOrder open = service.create(request("Paint touch-up", Priority.LOW, Category.GENERAL));
+        clock.advance(Duration.ofDays(7).plusSeconds(1));
+
+        assertThatThrownBy(() -> service.reopen(completed.id(), "Still broken"))
+                .isInstanceOf(InvalidTransitionException.class);
+        assertThatThrownBy(() -> service.reopen(open.id(), "Still broken"))
+                .isInstanceOf(InvalidTransitionException.class);
+        assertThat(completed.status()).isEqualTo(Status.COMPLETED);
+        assertThat(completed.reopenCount()).isZero();
+    }
+
+    private WorkOrder completedOrder(Priority priority) {
+        WorkOrder order = service.create(request("Sink leaking", priority, Category.PLUMBING));
+        service.assign(order.id(), "Jordan Lee");
+        service.changeStatus(order.id(), Status.IN_PROGRESS, null);
+        clock.advance(Duration.ofHours(1));
+        service.changeStatus(order.id(), Status.COMPLETED, null);
+        return order;
+    }
+
     private AtRiskMix seedAtRiskMix() {
         WorkOrder urgentAtRisk = service.createAt(
                 request("Sink leaking", Priority.URGENT, Category.PLUMBING), START.minus(Duration.ofMinutes(210)));
