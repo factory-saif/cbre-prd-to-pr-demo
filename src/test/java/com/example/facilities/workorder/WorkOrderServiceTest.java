@@ -335,6 +335,21 @@ class WorkOrderServiceTest {
         assertThat(completed.reopenCount()).isZero();
     }
 
+    @Test
+    void reopeningAgainRecordsTheLatestReopenTime() {
+        WorkOrder order = completedOrder(Priority.HIGH);
+        clock.advance(Duration.ofDays(1));
+        service.reopen(order.id(), "Leak is dripping again");
+        clock.advance(Duration.ofDays(4));
+        service.changeStatus(order.id(), Status.COMPLETED, null);
+        clock.advance(Duration.ofDays(3));
+
+        service.reopen(order.id(), "Leaking for a third time");
+
+        assertThat(order.reopenCount()).isEqualTo(2);
+        assertThat(order.reopenedAt()).isEqualTo(START.plus(Duration.ofHours(1)).plus(Duration.ofDays(8)));
+    }
+
     private WorkOrder completedOrder(Priority priority) {
         WorkOrder order = service.create(request("Sink leaking", priority, Category.PLUMBING));
         service.assign(order.id(), "Jordan Lee");

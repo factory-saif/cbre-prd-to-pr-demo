@@ -196,7 +196,12 @@ class WorkOrderReopenApiTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.status").value("IN_PROGRESS"))
                 .andExpect(jsonPath("$.reopenCount").value(2))
+                .andExpect(jsonPath("$.reopenedAt").value("2026-03-10T10:00:00Z"))
                 .andExpect(jsonPath("$.dueAt").value("2026-03-11T10:00:00Z"));
+
+        mvc.perform(get("/api/work-orders/{id}", id))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.reopenedAt").value("2026-03-10T10:00:00Z"));
     }
 
     @Test

@@ -70,9 +70,7 @@ public class WorkOrder {
                 + Status.IN_PROGRESS.displayName() + ": Reopened: " + reason;
         status = Status.IN_PROGRESS;
         completedAt = null;
-        if (reopenedAt == null) {
-            reopenedAt = at;
-        }
+        reopenedAt = at;
         windowStart = at;
         dueAt = at.plus(priority.responseTarget());
         reopenCount++;
